@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Password Manager (Popup)",
-  "version": "1.9.42",
+  "version": "1.9.43",
   "description": "A clean and accessible password manager browser extension",
   "permissions": [
     "storage",

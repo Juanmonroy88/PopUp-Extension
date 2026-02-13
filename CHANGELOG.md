@@ -5,6 +5,17 @@ All notable changes to this extension will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.43] - 2026-02-13
+
+### Added
+- Save account modal: design aligned with Figma (Login-and-Capture-Revamp node 15500-761). Modal uses design tokens for colors, spacing, radii, shadow, and typography (Proxima Nova). Container has a thin light grey border; tabs use Figma styling (inactive = white + grey border, active = solid primary blue). Content area has proper top padding below tabs.
+- Save account modal: username/email field is prefilled from the field the user was in when they clicked "Save in Cerby" (or from the inline module display, then page inputs).
+- Save account modal: password strength is dynamic—empty shows "Weak" (grey), then "Fair" (orange) and "Strong" (green) as the user types based on length and character variety. Strength updates on input and after prefill.
+
+### Fixed
+- Save account modal: opens reliably when clicking the "Save in Cerby" button below the email field. Added mousedown + click handlers on the button and coordinate-based fallback in document click and global mouseup so the modal opens even when the event target is a page label or other element. Modal is created in the content script document and shown with inline critical styles so it stays visible.
+- Save account modal: "Save new account" row in the login dropdown now opens the Save account modal with the same styling and prefill behavior.
+
 ## [1.9.42] - 2026-02-13
 
 ### Added

@@ -26,6 +26,18 @@ const MODULE_OFFSET = 8;
 const SAVE_ACCOUNT_MODAL_ID = 'cerby-save-account-modal';
 const INLINE_ACCOUNT_DROPDOWN_ID = 'cerby-inline-account-dropdown';
 
+/** Top-level document so the modal is centered on the full browser viewport with overlay. */
+function getTopDocument() {
+  try {
+    if (typeof window !== 'undefined' && window.top && window.top.document) {
+      return window.top.document;
+    }
+  } catch (e) {
+    // Cross-origin: use current document
+  }
+  return document;
+}
+
 let workspaceEmail = 'workspace@example.com';
 let moduleElement = null;
 let currentInput = null;
@@ -65,6 +77,8 @@ async function initializeInlineExtension() {
   document.addEventListener('focusin', handleFocusIn, true);
   document.addEventListener('mousedown', handleDismiss, true);
   document.addEventListener('keydown', handleKeydownDismiss, true);
+  // Delegate Save in Cerby click so modal opens even if button listener doesn't fire (e.g. focus/stack)
+  document.addEventListener('click', handleSaveInCerbyClick, true);
   window.addEventListener('blur', hideModule, true);
   window.addEventListener('scroll', handleViewportChange, true);
   window.addEventListener('resize', handleViewportChange, true);
@@ -358,6 +372,11 @@ function showModule(input, moduleType = 'email') {
   
   associateModuleWithInput(moduleElement, input, moduleType);
 
+  // On signup with empty email, show "Save in Cerby" immediately so user can open the save modal without typing first
+  if (isSignupContext() && moduleType === 'email' && (!input.value || !input.value.trim())) {
+    setModuleState('save');
+  }
+
   requestAnimationFrame(() => {
     const inputRect = input.getBoundingClientRect();
     if (inputRect.width === 0 && inputRect.height === 0) {
@@ -557,6 +576,42 @@ function createModuleElement(moduleType = 'email') {
         }
       }
     }
+
+    // When no suggestion had a pending click (e.g. user clicked "Save in Cerby" or "Save new account"
+    // but target was a LABEL), open modal if mouseup coordinates are inside our save UI
+    if (allSuggestions.length === 0 && e.clientX != null && e.clientY != null) {
+      const x = e.clientX;
+      const y = e.clientY;
+      const inRect = (el) => {
+        if (!el || !el.getBoundingClientRect) return false;
+        const r = el.getBoundingClientRect();
+        return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+      };
+      const saveButtonEl = document.querySelector('.cerby-inline-module__save-button');
+      const moduleSaveEl = document.querySelector('.cerby-inline-module[data-state="save"]');
+      const saveNewEl = document.querySelector('.cerby-inline-account-dropdown__save-new');
+      if (saveButtonEl && inRect(saveButtonEl)) {
+        e.preventDefault();
+        e.stopPropagation();
+        hideModule();
+        hideInlineAccountDropdown();
+        const password = moduleElement?.querySelector(`#${MODULE_PASSWORD_TEXT_ID}`)?.dataset?.plainPassword || '';
+        openSaveAccountModal(password, saveButtonEl);
+      } else if (moduleSaveEl && inRect(moduleSaveEl)) {
+        e.preventDefault();
+        e.stopPropagation();
+        hideModule();
+        hideInlineAccountDropdown();
+        const password = moduleElement?.querySelector(`#${MODULE_PASSWORD_TEXT_ID}`)?.dataset?.plainPassword || '';
+        openSaveAccountModal(password, moduleSaveEl);
+      } else if (saveNewEl && inRect(saveNewEl)) {
+        e.preventDefault();
+        e.stopPropagation();
+        hideInlineAccountDropdown();
+        const passwordFromPage = document.querySelector('input[type="password"]')?.value || '';
+        openSaveAccountModal(passwordFromPage, saveNewEl);
+      }
+    }
   };
   
   // Add global listener once
@@ -653,8 +708,24 @@ function createModuleElement(moduleType = 'email') {
   moduleSaveButton.type = 'button';
   moduleSaveButton.className = 'cerby-inline-module__save-button';
   moduleSaveButton.textContent = 'Save in Cerby';
-  moduleSaveButton.addEventListener('click', handleSaveClick);
-
+  const openSaveModalFromButton = function() {
+    const password = moduleElement?.querySelector(`#${MODULE_PASSWORD_TEXT_ID}`)?.dataset?.plainPassword || '';
+    hideModule();
+    hideInlineAccountDropdown();
+    openSaveAccountModal(password, moduleSaveButton);
+  };
+  // Mousedown fires first and is less likely to be retargeted to a label – use it so the modal always opens
+  moduleSaveButton.addEventListener('mousedown', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    setTimeout(openSaveModalFromButton, 0);
+  }, true);
+  // Click as backup (e.g. keyboard Enter)
+  moduleSaveButton.addEventListener('click', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    setTimeout(openSaveModalFromButton, 0);
+  }, true);
   saveContainer.appendChild(moduleSaveButton);
   container.appendChild(saveContainer);
 
@@ -765,10 +836,10 @@ function handlePasswordSuggestionClick(event) {
     }
   }
 
-  // Open the save account modal immediately
+  // Open the save account modal immediately (use input so modal is in same document/frame as form)
   try {
     console.log('Cerby: Calling openSaveAccountModal with password:', password.substring(0, 5) + '...');
-    openSaveAccountModal(password);
+    openSaveAccountModal(password, input);
     console.log('Cerby: openSaveAccountModal call completed');
   } catch (error) {
     console.error('Cerby: Error opening save account modal:', error);
@@ -818,22 +889,35 @@ function getEmailFromPage() {
       return input.value.trim();
     }
   }
-  
-  // Fallback to workspace email
   return workspaceEmail;
 }
 
-function createSaveAccountModal() {
-  if (saveAccountModal && saveAccountModal.isConnected) {
-    return saveAccountModal;
+/** Email to show in Save account modal: prefer the field the user was in when they clicked Save in Cerby. */
+function getEmailForSaveModal() {
+  const fromInput = currentInput && currentInput.value && currentInput.value.trim();
+  if (fromInput) return fromInput;
+  const fromModule = moduleElement && moduleElement.querySelector(`#${MODULE_EMAIL_TEXT_ID}`);
+  const moduleEmail = fromModule && fromModule.textContent && fromModule.textContent.trim();
+  if (moduleEmail) return moduleEmail;
+  return getEmailFromPage();
+}
+
+function createSaveAccountModal(targetDoc) {
+  const doc = targetDoc || document;
+  const existing = doc.getElementById(SAVE_ACCOUNT_MODAL_ID);
+  if (existing && existing.isConnected) {
+    saveAccountModal = existing;
+    return existing;
   }
 
-  // Remove existing modal if it exists but isn't connected
+  if (saveAccountModal && saveAccountModal.ownerDocument !== doc) {
+    saveAccountModal = null;
+  }
   if (saveAccountModal && !saveAccountModal.isConnected) {
     saveAccountModal = null;
   }
 
-  const modal = document.createElement('div');
+  const modal = doc.createElement('div');
   modal.id = SAVE_ACCOUNT_MODAL_ID;
   modal.className = 'cerby-save-account-modal';
   modal.setAttribute('role', 'dialog');
@@ -841,20 +925,20 @@ function createSaveAccountModal() {
   modal.setAttribute('aria-modal', 'true');
   modal.style.display = 'none';
 
-  const container = document.createElement('div');
+  const container = doc.createElement('div');
   container.className = 'cerby-save-account-modal__container';
 
   // Header
-  const header = document.createElement('div');
+  const header = doc.createElement('div');
   header.className = 'cerby-save-account-modal__header';
 
-  const headerContent = document.createElement('div');
+  const headerContent = doc.createElement('div');
   headerContent.className = 'cerby-save-account-modal__header-content';
 
-  const logoContainer = document.createElement('div');
+  const logoContainer = doc.createElement('div');
   logoContainer.className = 'cerby-save-account-modal__logo-container';
 
-  const cerbyLogo = document.createElement('img');
+  const cerbyLogo = doc.createElement('img');
   cerbyLogo.className = 'cerby-save-account-modal__cerby-logo';
   cerbyLogo.alt = 'Cerby';
   cerbyLogo.src = chromeApi?.runtime?.getURL
@@ -863,7 +947,7 @@ function createSaveAccountModal() {
 
   logoContainer.appendChild(cerbyLogo);
 
-  const title = document.createElement('p');
+  const title = doc.createElement('p');
   title.id = 'cerby-modal-title';
   title.className = 'cerby-save-account-modal__title';
   title.textContent = 'Save account?';
@@ -874,53 +958,81 @@ function createSaveAccountModal() {
   // Store reference for width constraint
   modal._headerContent = headerContent;
 
-  const closeButton = document.createElement('button');
+  const closeButton = doc.createElement('button');
   closeButton.type = 'button';
   closeButton.className = 'cerby-save-account-modal__close-button';
   closeButton.setAttribute('aria-label', 'Close modal');
   closeButton.addEventListener('click', closeSaveAccountModal);
 
-  const closeIcon = document.createElement('div');
+  const closeIcon = doc.createElement('div');
   closeIcon.className = 'cerby-save-account-modal__close-icon';
   closeButton.appendChild(closeIcon);
 
   header.appendChild(headerContent);
   header.appendChild(closeButton);
 
+  // Tabs (Figma: Save new account | Update existing account)
+  const tabs = doc.createElement('div');
+  tabs.className = 'cerby-save-account-modal__tabs';
+  const tabSaveNew = doc.createElement('button');
+  tabSaveNew.type = 'button';
+  tabSaveNew.className = 'cerby-save-account-modal__tab cerby-save-account-modal__tab--active';
+  tabSaveNew.textContent = 'Save new account';
+  tabSaveNew.setAttribute('aria-pressed', 'true');
+  const tabUpdate = doc.createElement('button');
+  tabUpdate.type = 'button';
+  tabUpdate.className = 'cerby-save-account-modal__tab';
+  tabUpdate.textContent = 'Update existing account';
+  tabUpdate.setAttribute('aria-pressed', 'false');
+  tabs.appendChild(tabSaveNew);
+  tabs.appendChild(tabUpdate);
+  tabSaveNew.addEventListener('click', () => {
+    tabSaveNew.classList.add('cerby-save-account-modal__tab--active');
+    tabSaveNew.setAttribute('aria-pressed', 'true');
+    tabUpdate.classList.remove('cerby-save-account-modal__tab--active');
+    tabUpdate.setAttribute('aria-pressed', 'false');
+  });
+  tabUpdate.addEventListener('click', () => {
+    tabUpdate.classList.add('cerby-save-account-modal__tab--active');
+    tabUpdate.setAttribute('aria-pressed', 'true');
+    tabSaveNew.classList.remove('cerby-save-account-modal__tab--active');
+    tabSaveNew.setAttribute('aria-pressed', 'false');
+  });
+
   // Content
-  const content = document.createElement('div');
+  const content = doc.createElement('div');
   content.className = 'cerby-save-account-modal__content';
 
-  const fieldsContainer = document.createElement('div');
+  const fieldsContainer = doc.createElement('div');
   fieldsContainer.className = 'cerby-save-account-modal__fields';
 
-  const accountRow = document.createElement('div');
+  const accountRow = doc.createElement('div');
   accountRow.className = 'cerby-save-account-modal__account-row';
 
-  const providerLogoContainer = document.createElement('div');
+  const providerLogoContainer = doc.createElement('div');
   providerLogoContainer.className = 'cerby-save-account-modal__provider-logo-container';
 
-  const providerLogo = document.createElement('img');
+  const providerLogo = doc.createElement('img');
   providerLogo.className = 'cerby-save-account-modal__provider-logo';
   providerLogo.alt = '';
   providerLogo.style.display = 'none';
 
   providerLogoContainer.appendChild(providerLogo);
 
-  const accountNameContainer = document.createElement('div');
+  const accountNameContainer = doc.createElement('div');
   accountNameContainer.className = 'cerby-save-account-modal__account-name-container';
 
-  const accountNameDetail = document.createElement('div');
+  const accountNameDetail = doc.createElement('div');
   accountNameDetail.className = 'cerby-save-account-modal__account-name-detail';
 
-  const accountNameLabel = document.createElement('p');
+  const accountNameLabel = doc.createElement('p');
   accountNameLabel.className = 'cerby-save-account-modal__account-name-label';
   accountNameLabel.textContent = 'Account name*';
 
-  const accountNameTextWrapper = document.createElement('div');
+  const accountNameTextWrapper = doc.createElement('div');
   accountNameTextWrapper.className = 'cerby-save-account-modal__account-name-text-wrapper';
 
-  const accountNameText = document.createElement('p');
+  const accountNameText = doc.createElement('p');
   accountNameText.className = 'cerby-save-account-modal__account-name-text';
   accountNameText.textContent = 'new_account';
 
@@ -929,14 +1041,14 @@ function createSaveAccountModal() {
   accountNameDetail.appendChild(accountNameTextWrapper);
 
   // Hidden input for editing (shown when edit button is clicked)
-  const accountNameInput = document.createElement('input');
+  const accountNameInput = doc.createElement('input');
   accountNameInput.type = 'text';
   accountNameInput.className = 'cerby-save-account-modal__account-name-input';
   accountNameInput.value = 'new_account';
   accountNameInput.style.display = 'none';
   accountNameInput.setAttribute('aria-label', 'Account name');
 
-  const editButton = document.createElement('button');
+  const editButton = doc.createElement('button');
   editButton.type = 'button';
   editButton.className = 'cerby-save-account-modal__edit-button';
   editButton.setAttribute('aria-label', 'Edit account name');
@@ -966,7 +1078,7 @@ function createSaveAccountModal() {
     }, { once: true });
   });
 
-  const editIcon = document.createElement('img');
+  const editIcon = doc.createElement('img');
   editIcon.className = 'cerby-save-account-modal__edit-icon';
   editIcon.alt = '';
   editIcon.src = chromeApi?.runtime?.getURL
@@ -975,7 +1087,7 @@ function createSaveAccountModal() {
 
   editButton.appendChild(editIcon);
   
-  const accountNameRow = document.createElement('div');
+  const accountNameRow = doc.createElement('div');
   accountNameRow.className = 'cerby-save-account-modal__account-name-row';
   accountNameRow.appendChild(accountNameDetail);
   accountNameRow.appendChild(editButton);
@@ -987,29 +1099,133 @@ function createSaveAccountModal() {
   accountRow.appendChild(accountNameContainer);
 
   fieldsContainer.appendChild(accountRow);
+
+  // Username / email* (Figma)
+  const usernameLabel = doc.createElement('label');
+  usernameLabel.className = 'cerby-save-account-modal__field-label';
+  usernameLabel.textContent = 'Username / email*';
+  const usernameInput = doc.createElement('input');
+  usernameInput.type = 'text';
+  usernameInput.className = 'cerby-save-account-modal__field-input';
+  usernameInput.setAttribute('aria-label', 'Username or email');
+  usernameInput.placeholder = '';
+  const usernameRow = doc.createElement('div');
+  usernameRow.className = 'cerby-save-account-modal__field-row';
+  usernameRow.appendChild(usernameLabel);
+  usernameRow.appendChild(usernameInput);
+  fieldsContainer.appendChild(usernameRow);
+
+  // Password* with visibility toggle, strength, Generate password (Figma)
+  const passwordLabel = doc.createElement('label');
+  passwordLabel.className = 'cerby-save-account-modal__field-label';
+  passwordLabel.textContent = 'Password*';
+  const passwordWrap = doc.createElement('div');
+  passwordWrap.className = 'cerby-save-account-modal__password-wrap';
+  const passwordInput = doc.createElement('input');
+  passwordInput.type = 'password';
+  passwordInput.className = 'cerby-save-account-modal__field-input cerby-save-account-modal__password-input';
+  passwordInput.setAttribute('aria-label', 'Password');
+  const visibilityBtn = doc.createElement('button');
+  visibilityBtn.type = 'button';
+  visibilityBtn.className = 'cerby-save-account-modal__password-toggle';
+  visibilityBtn.setAttribute('aria-label', 'Show password');
+  const visibilityIconUrl = chromeApi?.runtime?.getURL ? chromeApi.runtime.getURL('assets/visibility-icon.svg') : '';
+  const visibilityImg = doc.createElement('img');
+  visibilityImg.src = visibilityIconUrl;
+  visibilityImg.alt = '';
+  visibilityImg.className = 'cerby-save-account-modal__password-toggle-icon';
+  visibilityBtn.appendChild(visibilityImg);
+  visibilityBtn.addEventListener('click', () => {
+    const isPassword = passwordInput.type === 'password';
+    passwordInput.type = isPassword ? 'text' : 'password';
+    visibilityBtn.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+  });
+  passwordWrap.appendChild(passwordInput);
+  passwordWrap.appendChild(visibilityBtn);
+  const passwordMeta = doc.createElement('div');
+  passwordMeta.className = 'cerby-save-account-modal__password-meta';
+  const strengthText = doc.createElement('span');
+  strengthText.className = 'cerby-save-account-modal__password-strength';
+  strengthText.textContent = 'Weak password';
+  strengthText.setAttribute('data-strength', 'weak');
+  function getPasswordStrengthLevel(p) {
+    if (!p || p.length === 0) return 'weak';
+    let score = 0;
+    if (p.length >= 8) score++;
+    if (p.length >= 12) score++;
+    if (/[a-z]/.test(p) && /[A-Z]/.test(p)) score++;
+    if (/\d/.test(p)) score++;
+    if (/[^a-zA-Z0-9]/.test(p)) score++;
+    if (score <= 1) return 'weak';
+    if (score <= 3) return 'fair';
+    return 'strong';
+  }
+  function updatePasswordStrength() {
+    const p = (passwordInput && passwordInput.value) || '';
+    const level = getPasswordStrengthLevel(p);
+    strengthText.textContent = level === 'weak' ? 'Weak password' : level === 'fair' ? 'Fair password' : 'Strong password';
+    strengthText.setAttribute('data-strength', level);
+    strengthText.className = 'cerby-save-account-modal__password-strength cerby-save-account-modal__password-strength--' + level;
+  }
+  passwordInput.addEventListener('input', updatePasswordStrength);
+  passwordInput.addEventListener('change', updatePasswordStrength);
+  const generateLink = doc.createElement('button');
+  generateLink.type = 'button';
+  generateLink.className = 'cerby-save-account-modal__generate-link';
+  generateLink.textContent = 'Generate password';
+  passwordMeta.appendChild(strengthText);
+  passwordMeta.appendChild(generateLink);
+  const passwordRow = doc.createElement('div');
+  passwordRow.className = 'cerby-save-account-modal__field-row';
+  passwordRow.appendChild(passwordLabel);
+  passwordRow.appendChild(passwordWrap);
+  passwordRow.appendChild(passwordMeta);
+  fieldsContainer.appendChild(passwordRow);
+
+  // URL* (Figma)
+  const urlLabel = doc.createElement('label');
+  urlLabel.className = 'cerby-save-account-modal__field-label';
+  urlLabel.textContent = 'URL*';
+  const urlInput = doc.createElement('input');
+  urlInput.type = 'url';
+  urlInput.className = 'cerby-save-account-modal__field-input';
+  urlInput.setAttribute('aria-label', 'URL');
+  urlInput.placeholder = 'www.example.com';
+  const urlRow = doc.createElement('div');
+  urlRow.className = 'cerby-save-account-modal__field-row';
+  urlRow.appendChild(urlLabel);
+  urlRow.appendChild(urlInput);
+  fieldsContainer.appendChild(urlRow);
+
   content.appendChild(fieldsContainer);
 
-  // Footer
-  const footer = document.createElement('div');
+  // Footer (Figma: Not now | Save account)
+  const footer = doc.createElement('div');
   footer.className = 'cerby-save-account-modal__footer';
 
-  const footerContent = document.createElement('div');
+  const footerContent = doc.createElement('div');
   footerContent.className = 'cerby-save-account-modal__footer-content';
 
-  const vaultDropdown = document.createElement('div');
+  const notNowButton = doc.createElement('button');
+  notNowButton.type = 'button';
+  notNowButton.className = 'cerby-save-account-modal__not-now-button';
+  notNowButton.textContent = 'Not now';
+  notNowButton.addEventListener('click', closeSaveAccountModal);
+
+  const vaultDropdown = doc.createElement('div');
   vaultDropdown.className = 'cerby-save-account-modal__vault-dropdown';
 
-  const vaultInput = document.createElement('div');
+  const vaultInput = doc.createElement('div');
   vaultInput.className = 'cerby-save-account-modal__vault-input';
   vaultInput.setAttribute('role', 'button');
   vaultInput.setAttribute('tabindex', '0');
   vaultInput.setAttribute('aria-label', 'Select vault');
 
-  const vaultText = document.createElement('p');
+  const vaultText = doc.createElement('p');
   vaultText.className = 'cerby-save-account-modal__vault-text';
   vaultText.textContent = 'Personal Vault';
 
-  const chevronIcon = document.createElement('img');
+  const chevronIcon = doc.createElement('img');
   chevronIcon.className = 'cerby-save-account-modal__chevron-icon';
   chevronIcon.alt = '';
   chevronIcon.src = chromeApi?.runtime?.getURL
@@ -1020,26 +1236,36 @@ function createSaveAccountModal() {
   vaultInput.appendChild(chevronIcon);
   vaultDropdown.appendChild(vaultInput);
 
-  const saveButton = document.createElement('button');
+  const saveButton = doc.createElement('button');
   saveButton.type = 'button';
   saveButton.className = 'cerby-save-account-modal__save-button';
   saveButton.textContent = 'Save account';
   saveButton.addEventListener('click', handleSaveAccount);
 
-  footerContent.appendChild(vaultDropdown);
-  footerContent.appendChild(saveButton);
+  const footerActions = doc.createElement('div');
+  footerActions.className = 'cerby-save-account-modal__footer-actions';
+  footerActions.appendChild(vaultDropdown);
+  footerActions.appendChild(saveButton);
+
+  footerContent.appendChild(notNowButton);
+  footerContent.appendChild(footerActions);
   footer.appendChild(footerContent);
 
   container.appendChild(header);
+  container.appendChild(tabs);
   container.appendChild(content);
   container.appendChild(footer);
   modal.appendChild(container);
 
-  // Store references
+  // Store references for prefilling and save
   modal._providerLogo = providerLogo;
   modal._accountNameText = accountNameText;
   modal._accountNameInput = accountNameInput;
   modal._editButton = editButton;
+  modal._usernameInput = usernameInput;
+  modal._passwordInput = passwordInput;
+  modal._urlInput = urlInput;
+  modal._updatePasswordStrength = updatePasswordStrength;
 
   // Add backdrop click handler
   modal.addEventListener('click', function(e) {
@@ -1052,114 +1278,87 @@ function createSaveAccountModal() {
     }
   });
 
-  // Ensure body exists before appending
-  if (!document.body) {
-    console.error('Cerby: document.body is not available');
+  // Append to body so modal is on top and centered on full viewport; fallback to documentElement
+  const root = doc.body || doc.documentElement;
+  if (!root) {
+    console.error('Cerby: No body or documentElement');
     return null;
   }
 
   try {
-    console.log('Cerby: Appending modal to body in createSaveAccountModal');
-    document.body.appendChild(modal);
+    console.log('Cerby: Appending save account modal to', root === doc.body ? 'body' : 'documentElement');
+    root.appendChild(modal);
     saveAccountModal = modal;
-    console.log('Cerby: Modal appended, checking if in DOM:', document.body.contains(modal));
+    console.log('Cerby: Modal appended, in DOM:', root.contains(modal));
     return modal;
   } catch (error) {
-    console.error('Cerby: Error appending modal to body:', error);
+    console.error('Cerby: Error appending modal:', error);
     return null;
   }
 }
 
-function openSaveAccountModal(password) {
-  console.log('Cerby: openSaveAccountModal called with password length:', password?.length || 0);
+function openSaveAccountModal(password, sourceElement) {
+  // Use the document where the content script runs so injected CSS applies to the modal
+  const doc = document;
+  console.log('Cerby: openSaveAccountModal called, password length:', password?.length ?? 0);
   try {
-    const modal = createSaveAccountModal();
+    const modal = createSaveAccountModal(doc);
     if (!modal) {
       console.error('Cerby: Failed to create save account modal - modal is null');
       return;
     }
 
-    console.log('Cerby: Modal created, isConnected:', modal.isConnected, 'modal element:', modal);
+    const root = doc.body || doc.documentElement;
+    if (!root) {
+      console.error('Cerby: No body or documentElement');
+      return;
+    }
+    if (!root.contains(modal)) {
+      root.appendChild(modal);
+    }
+    // Move to end of body so it's on top of other nodes
+    if (doc.body && modal.parentNode !== doc.body) {
+      doc.body.appendChild(modal);
+    }
 
-    // Ensure modal is in the DOM
-    if (!modal.isConnected) {
-      if (document.body) {
-        console.log('Cerby: Appending modal to body');
-        document.body.appendChild(modal);
-      } else {
-        console.error('Cerby: document.body is not available');
-        return;
+    // Prefill (don't let errors here block showing the modal)
+    try {
+      const currentDomain = extractDomain(window.location.href);
+      const email = getEmailForSaveModal();
+      const accountName = extractAccountName(email);
+      if (modal._accountNameText) modal._accountNameText.textContent = accountName;
+      if (modal._accountNameInput) modal._accountNameInput.value = accountName;
+      if (modal._providerLogo && currentDomain) {
+        const logoUrl = getProviderLogoUrl(currentDomain);
+        modal._providerLogo.src = logoUrl;
+        modal._providerLogo.style.display = 'block';
+        modal._providerLogo.onerror = function() {
+          this.src = `https://www.google.com/s2/favicons?domain=${currentDomain}&sz=64`;
+          this.onerror = null;
+        };
       }
+      if (modal._usernameInput) modal._usernameInput.value = email || '';
+      if (modal._passwordInput) modal._passwordInput.value = password || '';
+      if (modal._urlInput) modal._urlInput.value = currentDomain ? (currentDomain.startsWith('www.') ? currentDomain : 'www.' + currentDomain) : '';
+      if (typeof modal._updatePasswordStrength === 'function') modal._updatePasswordStrength();
+    } catch (prefillErr) {
+      console.warn('Cerby: Prefill error (modal will still show):', prefillErr);
     }
 
-    // Get current domain and email
-    const currentDomain = extractDomain(window.location.href);
-    const email = getEmailFromPage();
-    const accountName = extractAccountName(email);
-
-    // Set account name
-    if (modal._accountNameText) {
-      modal._accountNameText.textContent = accountName;
-    }
-    if (modal._accountNameInput) {
-      modal._accountNameInput.value = accountName;
-    }
-
-    // Set provider logo
-    if (modal._providerLogo && currentDomain) {
-      const logoUrl = getProviderLogoUrl(currentDomain);
-      modal._providerLogo.src = logoUrl;
-      modal._providerLogo.style.display = 'block';
-      modal._providerLogo.onerror = function() {
-        // Fallback to Google favicon
-        this.src = `https://www.google.com/s2/favicons?domain=${currentDomain}&sz=64`;
-        this.onerror = null;
-      };
-    }
-
-    // Position modal in upper right corner
-    positionModal();
-
-    // Show modal - add visible class and set display
-    console.log('Cerby: Showing modal');
-    
-    // First ensure modal is in DOM
-    if (!modal.isConnected) {
-      console.log('Cerby: Modal not connected, appending to body');
-      document.body.appendChild(modal);
-    }
-    
-    // Add visible class
-    modal.classList.add('cerby-save-account-modal--visible');
-    
-    // Set all visibility properties with !important - use setProperty for better compatibility
-    modal.style.setProperty('display', 'flex', 'important');
-    modal.style.setProperty('visibility', 'visible', 'important');
-    modal.style.setProperty('opacity', '1', 'important');
-    modal.style.setProperty('z-index', '2147483647', 'important');
-    
-    // Also ensure container is visible
+    // Show modal - inline styles so it's visible even if CSS fails to load
     const container = modal.querySelector('.cerby-save-account-modal__container');
+    modal.classList.add('cerby-save-account-modal--visible');
+    modal.style.cssText = 'display:flex!important;visibility:visible!important;opacity:1!important;z-index:2147483647!important;position:fixed!important;inset:0!important;align-items:center;justify-content:center;background:rgba(0,0,0,.6);pointer-events:auto;';
     if (container) {
-      container.style.setProperty('display', 'flex', 'important');
-      container.style.setProperty('visibility', 'visible', 'important');
-      container.style.setProperty('opacity', '1', 'important');
-      console.log('Cerby: Container styles set');
-    } else {
-      console.error('Cerby: Container not found in modal!');
+      container.style.cssText = 'display:flex!important;visibility:visible!important;opacity:1!important;position:relative;flex-direction:column;width:436px;max-width:calc(100vw - 40px);background:#fff;border:1px solid #e3e8ee;border-radius:12px;box-shadow:0 18px 32px rgba(0,0,0,.16),0 5px 12px rgba(0,0,0,.12);pointer-events:auto;';
     }
-    
-    if (document.body) {
-      document.body.style.overflow = 'hidden';
-    }
+    if (doc.body) doc.body.style.overflow = 'hidden';
 
-    // Force a reflow to ensure the modal is rendered
     void modal.offsetHeight;
-    void container?.offsetHeight;
 
     // Check if modal is actually in the DOM and visible
-    const modalInDOM = document.getElementById(SAVE_ACCOUNT_MODAL_ID);
-    const computedStyle = window.getComputedStyle(modal);
+    const modalInDOM = doc.getElementById(SAVE_ACCOUNT_MODAL_ID);
+    const computedStyle = doc.defaultView ? doc.defaultView.getComputedStyle(modal) : window.getComputedStyle(modal);
     console.log('Cerby: Modal visibility check:', {
       foundById: !!modalInDOM,
       isConnected: modal.isConnected,
@@ -1192,27 +1391,17 @@ function openSaveAccountModal(password) {
 function closeSaveAccountModal() {
   if (!saveAccountModal) return;
 
+  const doc = saveAccountModal.ownerDocument;
   saveAccountModal.classList.remove('cerby-save-account-modal--visible');
   saveAccountModal.style.display = 'none';
-  if (document.body) {
-    document.body.style.overflow = '';
+  if (doc && doc.body) {
+    doc.body.style.overflow = '';
   }
 }
 
 function positionModal() {
   if (!saveAccountModal) return;
-
-  // The modal wrapper is already positioned via CSS (flex with justify-content: flex-end)
-  // The container doesn't need fixed positioning since the parent handles it
-  const container = saveAccountModal.querySelector('.cerby-save-account-modal__container');
-  if (container) {
-    container.style.position = 'relative';
-    container.style.top = 'auto';
-    container.style.right = 'auto';
-    container.style.left = 'auto';
-    container.style.bottom = 'auto';
-    container.style.transform = 'none';
-  }
+  // Modal is centered via CSS; no positioning override needed.
 }
 
 function handleSaveAccount() {
@@ -1220,15 +1409,16 @@ function handleSaveAccount() {
 
   // Get account name from text or input (whichever is visible)
   const accountNameText = saveAccountModal._accountNameText?.textContent || '';
-  const accountNameInput = saveAccountModal._accountNameInput?.value || '';
-  const accountName = accountNameInput || accountNameText || 'new_account';
-  
+  const accountNameInputVal = saveAccountModal._accountNameInput?.value || '';
+  const accountName = accountNameInputVal || accountNameText || 'new_account';
+
   const vault = saveAccountModal.querySelector('.cerby-save-account-modal__vault-text')?.textContent || 'Personal Vault';
-  const email = getEmailFromPage();
-  const password = moduleElement?.querySelector(`#${MODULE_PASSWORD_TEXT_ID}`)?.dataset?.plainPassword || '';
+  const email = saveAccountModal._usernameInput?.value?.trim() || getEmailFromPage();
+  const password = saveAccountModal._passwordInput?.value || moduleElement?.querySelector(`#${MODULE_PASSWORD_TEXT_ID}`)?.dataset?.plainPassword || '';
+  const url = saveAccountModal._urlInput?.value?.trim() || '';
 
   // TODO: Send message to background script to save account
-  console.log('Save account:', { accountName, vault, email, password });
+  console.log('Save account:', { accountName, vault, email, password, url });
 
   // Close modal
   closeSaveAccountModal();
@@ -1343,27 +1533,66 @@ function handleEmailSuggestionClick(event) {
   }
 }
 
+function handleSaveInCerbyClick(event) {
+  const target = event.target;
+  // Match the Save in Cerby button, or any click on the module when it's in "save" state (only state where that button is visible)
+  let saveBtn = target && target.closest && target.closest('.cerby-inline-module__save-button');
+  let moduleInSaveState = target && target.closest && target.closest('.cerby-inline-module[data-state="save"]');
+  // Also match "Save new account" row in the login dropdown (click may be retargeted to a LABEL or other element)
+  const saveNewRow = target && target.closest && target.closest('.cerby-inline-account-dropdown__save-new');
+  if (saveNewRow) {
+    event.preventDefault();
+    event.stopPropagation();
+    hideInlineAccountDropdown();
+    const passwordFromPage = document.querySelector('input[type="password"]')?.value || '';
+    openSaveAccountModal(passwordFromPage, saveNewRow);
+    return;
+  }
+
+  // Fallback: if target is something else (e.g. page LABEL), check if click coordinates are inside our UI
+  if (!saveBtn && !moduleInSaveState && event.clientX != null && event.clientY != null) {
+    const x = event.clientX;
+    const y = event.clientY;
+    const inRect = (el) => {
+      if (!el || !el.getBoundingClientRect) return false;
+      const r = el.getBoundingClientRect();
+      return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+    };
+    const saveButtonEl = document.querySelector('.cerby-inline-module__save-button');
+    const moduleSaveEl = document.querySelector('.cerby-inline-module[data-state="save"]');
+    const saveNewEl = document.querySelector('.cerby-inline-account-dropdown__save-new');
+    if (saveButtonEl && inRect(saveButtonEl)) saveBtn = saveButtonEl;
+    else if (moduleSaveEl && inRect(moduleSaveEl)) moduleInSaveState = moduleSaveEl;
+    else if (saveNewEl && inRect(saveNewEl)) {
+      event.preventDefault();
+      event.stopPropagation();
+      hideInlineAccountDropdown();
+      const passwordFromPage = document.querySelector('input[type="password"]')?.value || '';
+      openSaveAccountModal(passwordFromPage, saveNewEl);
+      return;
+    }
+  }
+
+  if (!saveBtn && !moduleInSaveState) return;
+
+  event.preventDefault();
+  event.stopPropagation();
+  console.log('Cerby: Save in Cerby clicked - opening save account modal');
+
+  hideModule();
+  hideInlineAccountDropdown();
+  const password = moduleElement?.querySelector(`#${MODULE_PASSWORD_TEXT_ID}`)?.dataset?.plainPassword || '';
+  openSaveAccountModal(password, event.target);
+}
+
 function handleSaveClick(event) {
   event.preventDefault();
   event.stopPropagation();
 
-  const value = currentInput?.value?.trim() || '';
-  if (!value) {
-    return;
-  }
-
-  if (chromeApi?.runtime?.sendMessage) {
-    chromeApi.runtime.sendMessage(
-      { type: 'cerby-inline-save-account', email: value },
-      () => {
-        const lastError = chromeApi.runtime?.lastError;
-        if (lastError) {
-          // eslint-disable-next-line no-console
-          console.warn('Cerby inline save dispatch failed:', lastError.message);
-        }
-      }
-    );
-  }
+  hideModule();
+  hideInlineAccountDropdown();
+  const password = moduleElement?.querySelector(`#${MODULE_PASSWORD_TEXT_ID}`)?.dataset?.plainPassword || '';
+  openSaveAccountModal(password, moduleElement || event.target);
 }
 
 function handleViewportChange() {
@@ -1582,6 +1811,37 @@ function createInlineAccountDropdown(accounts, input, fieldType) {
     list.appendChild(item);
   }
 
+  // "Save new account" row (shown on login): open save account modal
+  const saveNewRow = document.createElement('button');
+  saveNewRow.type = 'button';
+  saveNewRow.className = 'cerby-inline-account-dropdown__item cerby-inline-account-dropdown__save-new';
+  saveNewRow.setAttribute('role', 'option');
+  saveNewRow.innerHTML = `
+    <div class="cerby-inline-account-dropdown__item-main">
+      <div class="cerby-inline-account-dropdown__logo cerby-inline-account-dropdown__logo--save-new">
+        <img src="${escapeHtml(getUrl('assets/cerby-logo-modal.svg'))}" alt="Cerby" class="cerby-inline-account-dropdown__app-logo">
+      </div>
+      <div class="cerby-inline-account-dropdown__item-info">
+        <span class="cerby-inline-account-dropdown__item-name">Save new account</span>
+        <span class="cerby-inline-account-dropdown__item-email">Save in Cerby</span>
+      </div>
+    </div>`;
+  saveNewRow.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    hideInlineAccountDropdown();
+    const passwordFromPage = document.querySelector('input[type="password"]')?.value || '';
+    openSaveAccountModal(passwordFromPage, e.target);
+  });
+  saveNewRow.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      hideInlineAccountDropdown();
+      const passwordFromPage = document.querySelector('input[type="password"]')?.value || '';
+      openSaveAccountModal(passwordFromPage, e.target);
+    }
+  });
+
   function filterAndRender(term) {
     const lower = (term || '').toLowerCase().trim();
     const toShow = lower
@@ -1601,6 +1861,7 @@ function createInlineAccountDropdown(accounts, input, fieldType) {
 
     list.innerHTML = '';
     toShow.forEach(appendAccountItem);
+    list.appendChild(saveNewRow);
   }
 
   filterAndRender(input?.value?.trim() || '');
