@@ -1,0 +1,160 @@
+{
+  "manifest_version": 3,
+  "name": "Password Manager (Popup)",
+  "version": "1.9.41",
+  "description": "A clean and accessible password manager browser extension",
+  "permissions": [
+    "storage",
+    "tabs",
+    "scripting"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "host_permissions": [
+    "https://logo.clearbit.com/*",
+    "https://cdn.brandfetch.io/*",
+    "https://www.google.com/*",
+    "https://icons.duckduckgo.com/*",
+    "https://make.com/*",
+    "https://*.make.com/*",
+    "https://mailchimp.com/*",
+    "https://*.mailchimp.com/*",
+    "https://loom.com/*",
+    "https://*.loom.com/*",
+    "https://pinterest.com/*",
+    "https://*.pinterest.com/*",
+    "https://openai.com/*",
+    "https://*.openai.com/*",
+    "https://apple.com/*",
+    "https://*.apple.com/*",
+    "https://spotify.com/*",
+    "https://*.spotify.com/*",
+    "https://bitso.com/*",
+    "https://*.bitso.com/*",
+    "https://capitalone.com/*",
+    "https://*.capitalone.com/*",
+    "https://cursor.sh/*",
+    "https://*.cursor.sh/*",
+    "https://grammarly.com/*",
+    "https://*.grammarly.com/*",
+    "https://google.com/*",
+    "https://*.google.com/*",
+    "https://notion.so/*",
+    "https://*.notion.so/*",
+    "https://figma.com/*",
+    "https://*.figma.com/*",
+    "https://atlassian.com/*",
+    "https://*.atlassian.com/*",
+    "https://dropbox.com/*",
+    "https://*.dropbox.com/*",
+    "https://adobe.com/*",
+    "https://*.adobe.com/*",
+    "https://hubspot.com/*",
+    "https://*.hubspot.com/*",
+    "https://salesforce.com/*",
+    "https://*.salesforce.com/*",
+    "https://teuxdeux.com/*",
+    "https://*.teuxdeux.com/*",
+    "<all_urls>"
+  ],
+  "action": {
+    "default_title": "Password Manager",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://make.com/*",
+        "https://*.make.com/*",
+        "https://mailchimp.com/*",
+        "https://*.mailchimp.com/*",
+        "https://loom.com/*",
+        "https://*.loom.com/*",
+        "https://pinterest.com/*",
+        "https://*.pinterest.com/*",
+        "https://openai.com/*",
+        "https://*.openai.com/*",
+        "https://apple.com/*",
+        "https://*.apple.com/*",
+        "https://spotify.com/*",
+        "https://*.spotify.com/*",
+        "https://bitso.com/*",
+        "https://*.bitso.com/*",
+        "https://capitalone.com/*",
+        "https://*.capitalone.com/*",
+        "https://cursor.sh/*",
+        "https://*.cursor.sh/*",
+        "https://grammarly.com/*",
+        "https://*.grammarly.com/*",
+        "https://google.com/*",
+        "https://*.google.com/*",
+        "https://notion.so/*",
+        "https://*.notion.so/*",
+        "https://figma.com/*",
+        "https://*.figma.com/*",
+        "https://atlassian.com/*",
+        "https://*.atlassian.com/*",
+        "https://dropbox.com/*",
+        "https://*.dropbox.com/*",
+        "https://adobe.com/*",
+        "https://*.adobe.com/*",
+        "https://hubspot.com/*",
+        "https://*.hubspot.com/*",
+        "https://salesforce.com/*",
+        "https://*.salesforce.com/*",
+        "https://teuxdeux.com/*",
+        "https://*.teuxdeux.com/*"
+      ],
+      "js": [
+        "inline.js"
+      ],
+      "css": [
+        "inline.css"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "assets/settings-icon.svg",
+        "assets/cerby-logo.svg",
+        "assets/cerby-logo-dark.svg",
+        "assets/cerby-logo-modal.svg",
+        "assets/inline-settings-icon.svg",
+        "assets/edit-icon.svg",
+        "assets/chevron-down-icon.svg",
+        "assets/bad-credentials-icon.svg",
+        "assets/spinner-base.svg",
+        "assets/vault-icon.svg",
+        "assets/close-button-icon.svg",
+        "assets/sso-icon.svg",
+        "assets/clear-icon.svg",
+        "assets/login-icon.svg",
+        "assets/search-icon.svg",
+        "assets/folders-icon.svg",
+        "assets/sort-icon.svg",
+        "assets/open-new-icon.svg",
+        "assets/info-icon.svg"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; img-src 'self' https://logo.clearbit.com https://cdn.brandfetch.io https://www.google.com https://icons.duckduckgo.com;"
+  }
+}
+
