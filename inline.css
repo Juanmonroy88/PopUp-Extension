@@ -1,0 +1,1369 @@
+.cerby-inline-module {
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #ffffff;
+  border: 1px solid #e3e8ee;
+  border-radius: 8px;
+  box-shadow:
+    0 18px 32px rgba(0, 0, 0, 0.16),
+    0 5px 12px rgba(0, 0, 0, 0.12);
+  max-width: 360px;
+  color: #1f2f4d;
+  font-family: "Proxima Nova", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  z-index: 2147483646;
+  transition: background 0.15s ease;
+  pointer-events: auto;
+}
+
+.cerby-inline-module--visible {
+  display: flex;
+}
+
+.cerby-inline-module__label {
+  font-size: 10px;
+  line-height: 12px;
+  font-weight: 400;
+  color: #4f6489;
+  margin: 0;
+  cursor: pointer;
+  user-select: none;
+}
+
+.cerby-inline-module__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  cursor: pointer;
+  user-select: none;
+}
+
+.cerby-inline-module__suggestion {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+}
+
+.cerby-inline-module__email-value {
+  font-size: 14px;
+  line-height: 15px;
+  font-weight: 600;
+  color: #007da8;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin: 0;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.cerby-inline-module__email-value:hover {
+  opacity: 0.8;
+}
+
+.cerby-inline-module__password-container {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  cursor: pointer;
+  user-select: none;
+}
+
+.cerby-inline-module__password-value {
+  font-size: 14px;
+  line-height: 15px;
+  font-weight: 600;
+  font-family: "Proxima Nova", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #1f2f4d;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.cerby-inline-module__password-value:hover {
+  opacity: 0.8;
+}
+
+.cerby-inline-module__password-value span {
+  font-size: 14px;
+  line-height: 15px;
+  font-weight: 600;
+}
+
+.cerby-inline-module__settings-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  border: 0.75px solid #e3e8ee;
+  background: #ffffff;
+  padding: 0;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.cerby-inline-module__settings-button:hover,
+.cerby-inline-module__settings-button:focus-visible {
+  border-color: #d2d8e2;
+  box-shadow: 0 0 0 2px rgba(0, 125, 168, 0.12);
+  outline: none;
+}
+
+.cerby-inline-module__settings-button:active {
+  border-color: #c0c7d4;
+}
+
+.cerby-inline-module__settings-icon {
+  width: 15px;
+  height: 15px;
+}
+
+.cerby-inline-module__save-container {
+  display: none;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+  height: 28px;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.cerby-inline-module__save-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 140px;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 4px;
+  background: transparent;
+  border: none;
+  color: #4f6489;
+  font-size: 14px;
+  line-height: 15px;
+  font-weight: 600;
+  font-family: "Proxima Nova", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.cerby-inline-module__save-button:hover {
+  background: #f0f2f5;
+}
+
+.cerby-inline-module__save-button:focus-visible {
+  outline: 2px solid rgba(79, 100, 137, 0.3);
+  outline-offset: 2px;
+}
+
+.cerby-inline-module__save-button:active {
+  background: #e3e8ee;
+}
+
+.cerby-inline-module[data-state="suggestion"] .cerby-inline-module__suggestion {
+  display: flex;
+}
+
+.cerby-inline-module[data-state="suggestion"] .cerby-inline-module__save-container {
+  display: none;
+}
+
+.cerby-inline-module[data-state="suggestion"]:hover {
+  background: #f0f2f5;
+}
+
+.cerby-inline-module[data-state="save"] .cerby-inline-module__suggestion {
+  display: none;
+}
+
+.cerby-inline-module[data-state="save"] .cerby-inline-module__save-container {
+  display: flex;
+}
+
+.cerby-inline-module[data-state="save"] {
+  padding: 4px 0;
+  border-radius: 4px;
+  gap: 0;
+  width: 140px;
+  max-width: 140px;
+}
+
+.cerby-inline-module:focus-visible {
+  outline: 2px solid rgba(0, 125, 168, 0.4);
+  outline-offset: 2px;
+}
+
+/* Inline Account Dropdown - login pages (Figma: node 10311-4826) */
+.cerby-inline-account-dropdown {
+  display: none;
+  flex-direction: column;
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: #ffffff;
+  border: 1px solid #e3e8ee;
+  border-radius: 8px;
+  box-shadow: 0 18px 32px rgba(0, 0, 0, 0.16), 0 5px 12px rgba(0, 0, 0, 0.12);
+  width: 320px;
+  max-width: calc(100vw - 16px);
+  max-height: 320px;
+  overflow: hidden;
+  z-index: 2147483646;
+  font-family: "Proxima Nova", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  pointer-events: auto;
+}
+
+.cerby-inline-account-dropdown--visible {
+  display: flex;
+}
+
+.cerby-inline-account-dropdown__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid #e3e8ee;
+  flex-shrink: 0;
+  max-height: 52px;
+  transition: max-height 0.2s ease, padding 0.2s ease, opacity 0.2s ease, border-color 0.2s ease;
+}
+
+/* Scroll-to-hide: header collapses when user scrolls down to browse accounts */
+.cerby-inline-account-dropdown--header-hidden .cerby-inline-account-dropdown__header {
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  border-bottom-width: 0;
+  opacity: 0;
+  overflow: hidden;
+}
+
+.cerby-inline-account-dropdown__search-btn,
+.cerby-inline-account-dropdown__settings-btn,
+.cerby-inline-account-dropdown__expand-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0.75px solid #e3e8ee;
+  border-radius: 8px;
+  background: #ffffff;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.cerby-inline-account-dropdown__search-btn:hover,
+.cerby-inline-account-dropdown__settings-btn:hover,
+.cerby-inline-account-dropdown__expand-btn:hover,
+.cerby-inline-account-dropdown__search-btn:focus-visible,
+.cerby-inline-account-dropdown__settings-btn:focus-visible,
+.cerby-inline-account-dropdown__expand-btn:focus-visible {
+  border-color: #d2d8e2;
+  box-shadow: 0 0 0 2px rgba(0, 125, 168, 0.12);
+  outline: none;
+}
+
+.cerby-inline-account-dropdown__search-btn:active,
+.cerby-inline-account-dropdown__settings-btn:active,
+.cerby-inline-account-dropdown__expand-btn:active {
+  border-color: #c0c7d4;
+}
+
+.cerby-inline-account-dropdown__header-right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cerby-inline-account-dropdown__icon {
+  width: 20px;
+  height: 20px;
+  display: block;
+  object-fit: contain;
+}
+
+.cerby-inline-account-dropdown__list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 12px;
+  flex: 1;
+  min-height: 0;
+  max-height: 256px;
+  overflow-y: auto;
+  transition: max-height 0.2s ease;
+}
+
+/* When header is hidden, list expands to use full dropdown height */
+.cerby-inline-account-dropdown--header-hidden .cerby-inline-account-dropdown__list {
+  max-height: 304px;
+}
+
+.cerby-inline-account-dropdown__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  transition: background-color 0.15s ease;
+}
+
+.cerby-inline-account-dropdown__item:hover,
+.cerby-inline-account-dropdown__item:focus-visible {
+  background: #f0f2f5;
+  outline: none;
+}
+
+.cerby-inline-account-dropdown__item:focus-visible {
+  outline: 2px solid #2698bf;
+  outline-offset: -2px;
+}
+
+.cerby-inline-account-dropdown__item-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.cerby-inline-account-dropdown__item-info-btn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 0;
+  min-width: 0;
+  height: 28px;
+  padding: 0;
+  margin: 0;
+  border: none;
+  border-radius: 6px;
+  background: #e8ecf0;
+  cursor: pointer;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+  transition: width 0.15s ease, min-width 0.15s ease, background-color 0.15s ease, opacity 0.15s ease;
+}
+
+.cerby-inline-account-dropdown__item:hover .cerby-inline-account-dropdown__item-info-btn {
+  width: 28px;
+  min-width: 28px;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.cerby-inline-account-dropdown__item-info-icon {
+  width: 16px;
+  height: 16px;
+  display: block;
+  object-fit: contain;
+}
+
+.cerby-inline-account-dropdown__item-info-btn:hover {
+  background: #d2d8e2;
+}
+
+.cerby-inline-account-dropdown__item-info-btn:focus-visible {
+  outline: 2px solid #2698bf;
+  outline-offset: 1px;
+}
+
+.cerby-inline-account-dropdown__logo {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: 6px;
+  background: #f4f4f4;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cerby-inline-account-dropdown__logo--make {
+  background: #673AB7;
+  padding: 6px;
+}
+
+.cerby-inline-account-dropdown__app-logo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.cerby-inline-account-dropdown__logo-fallback {
+  font-weight: 600;
+  font-size: 14px;
+  color: #4f6489;
+  display: none;
+}
+
+.cerby-inline-account-dropdown__item-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cerby-inline-account-dropdown__item-name {
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 16px;
+  color: #1f2f4d;
+  white-space: nowrap;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+.cerby-inline-account-dropdown__item:hover .cerby-inline-account-dropdown__item-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cerby-inline-account-dropdown__item-email {
+  font-size: 12px;
+  line-height: 14px;
+  color: #4f6489;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cerby-inline-account-dropdown__list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.cerby-inline-account-dropdown__list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.cerby-inline-account-dropdown__list::-webkit-scrollbar-thumb {
+  background: #e3e8ee;
+  border-radius: 3px;
+}
+
+.cerby-inline-account-dropdown__list::-webkit-scrollbar-thumb:hover {
+  background: #4f6489;
+}
+
+/* Save Account Modal */
+.cerby-save-account-modal {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: flex-start;
+  justify-content: flex-end;
+  z-index: 2147483647;
+  padding: 20px;
+  pointer-events: none;
+}
+
+.cerby-save-account-modal.cerby-save-account-modal--visible {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.cerby-save-account-modal::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.1);
+  pointer-events: auto;
+}
+
+.cerby-save-account-modal__container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 436px;
+  max-width: calc(100vw - 40px);
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow:
+    0 18px 32px rgba(0, 0, 0, 0.16),
+    0 5px 12px rgba(0, 0, 0, 0.12);
+  pointer-events: auto;
+  font-family: "Proxima Nova", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  z-index: 2147483646;
+}
+
+.cerby-save-account-modal__header {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px 20px 4px 20px;
+  border-radius: 12px 12px 0 0;
+}
+
+.cerby-save-account-modal__header-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 385px;
+  max-width: 100%;
+}
+
+.cerby-save-account-modal__logo-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.cerby-save-account-modal__cerby-logo {
+  width: 28px;
+  height: 26.35px;
+  object-fit: contain;
+  display: block;
+}
+
+.cerby-save-account-modal__title {
+  font-size: 18px;
+  line-height: 28px;
+  font-weight: 600;
+  color: #1f2f4d;
+  margin: 0;
+  font-family: "Proxima Nova", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.cerby-save-account-modal__close-button {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background 0.15s ease;
+}
+
+.cerby-save-account-modal__close-button:hover {
+  background: #f8f8f8;
+}
+
+.cerby-save-account-modal__close-icon {
+  width: 32px;
+  height: 32px;
+  background: #f8f8f8;
+  border-radius: 50%;
+  position: relative;
+  transition: background 0.15s ease;
+}
+
+.cerby-save-account-modal__close-icon::before,
+.cerby-save-account-modal__close-icon::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 10px;
+  height: 1.4px;
+  background: #7187ad;
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.cerby-save-account-modal__close-icon::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+.cerby-save-account-modal__content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 20px;
+}
+
+.cerby-save-account-modal__fields {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.cerby-save-account-modal__account-row {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  padding: 2px 2px 2px 0;
+  width: 100%;
+}
+
+.cerby-save-account-modal__provider-logo-container {
+  width: 60px;
+  height: 60px;
+  flex-shrink: 0;
+  background: #f4f4f4;
+  border-radius: 2.667px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.cerby-save-account-modal__provider-logo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 20%;
+}
+
+.cerby-save-account-modal__account-name-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: rgba(247, 248, 250, 0.7);
+  border-radius: 4px;
+  padding: 12px 16px;
+  justify-content: center;
+}
+
+.cerby-save-account-modal__account-name-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 8px;
+}
+
+.cerby-save-account-modal__account-name-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.cerby-save-account-modal__account-name-label {
+  font-size: 12px;
+  line-height: 13px;
+  font-weight: 600;
+  color: #4f6489;
+  margin: 0;
+  font-family: "Proxima Nova", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.cerby-save-account-modal__account-name-text-wrapper {
+  display: flex;
+  gap: 1px;
+}
+
+.cerby-save-account-modal__account-name-text {
+  font-size: 14px;
+  line-height: 15px;
+  font-weight: 400;
+  color: #1f2f4d;
+  margin: 0;
+  font-family: "Proxima Nova", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cerby-save-account-modal__account-name-input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  line-height: 15px;
+  font-weight: 400;
+  color: #1f2f4d;
+  font-family: "Proxima Nova", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  padding: 0;
+  margin: 0;
+  outline: none;
+}
+
+.cerby-save-account-modal__account-name-input::placeholder {
+  color: #7187ad;
+}
+
+.cerby-save-account-modal__edit-button {
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+  transition: background 0.15s ease;
+}
+
+.cerby-save-account-modal__edit-button:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.cerby-save-account-modal__edit-icon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.cerby-save-account-modal__footer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 20px 20px 20px;
+  border-radius: 0 0 12px 12px;
+  background: #ffffff;
+}
+
+.cerby-save-account-modal__footer-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+}
+
+.cerby-save-account-modal__vault-dropdown {
+  flex: 0 0 186px;
+}
+
+.cerby-save-account-modal__vault-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 12px;
+  background: #fcfdfd;
+  border: 1px solid #7187ad;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.cerby-save-account-modal__vault-input:hover {
+  border-color: #4f6489;
+  background: #f8f9fa;
+}
+
+.cerby-save-account-modal__vault-text {
+  flex: 1;
+  font-size: 12px;
+  line-height: 13px;
+  font-weight: 400;
+  color: #7187ad;
+  margin: 0;
+  font-family: "Proxima Nova", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.cerby-save-account-modal__chevron-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+
+.cerby-save-account-modal__save-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 4px;
+  background: #007da8;
+  border: none;
+  color: #ffffff;
+  font-size: 14px;
+  line-height: 15px;
+  font-weight: 600;
+  font-family: "Proxima Nova", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  white-space: nowrap;
+}
+
+.cerby-save-account-modal__save-button:hover {
+  background: #006a91;
+}
+
+.cerby-save-account-modal__save-button:active {
+  background: #005a7a;
+}
+
+.cerby-save-account-modal__save-button:focus-visible {
+  outline: 2px solid rgba(0, 125, 168, 0.4);
+  outline-offset: 2px;
+}
+
+/* Bad Credentials Warning Overlay */
+.cerby-bad-credentials-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #ffffff;
+  z-index: 2147483647;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  font-family: "Proxima Nova", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.cerby-bad-credentials-overlay-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 100%;
+}
+
+.cerby-bad-credentials-overlay-icon-container {
+  position: relative;
+  width: 152px;
+  height: 152px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cerby-bad-credentials-overlay-spinner {
+  position: relative;
+  width: 152px;
+  height: 152px;
+}
+
+/* Loading Spinner Animation */
+.cerby-bad-credentials-overlay-spinner-base {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 152px;
+  height: 152px;
+  animation: cerby-spinner-rotate 0.6s linear infinite;
+}
+
+.cerby-bad-credentials-overlay-spinner-base img {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+@keyframes cerby-spinner-rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.cerby-bad-credentials-overlay-logo {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 56px;
+  height: 53px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cerby-bad-credentials-overlay-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+/* Loading State */
+.cerby-bad-credentials-overlay.loading .cerby-bad-credentials-overlay-actions {
+  display: none;
+}
+
+.cerby-bad-credentials-overlay.loading .cerby-bad-credentials-overlay-description {
+  gap: 0;
+}
+
+.cerby-bad-credentials-overlay.loading .cerby-bad-credentials-overlay-last-login {
+  display: none;
+}
+
+.cerby-bad-credentials-overlay-icon-wrapper {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 70px;
+  height: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cerby-bad-credentials-overlay-icon {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.cerby-bad-credentials-overlay-body {
+  display: flex;
+  flex-direction: column;
+  gap: 46px;
+  align-items: center;
+  width: 100%;
+}
+
+/* Loading state body spacing */
+.cerby-bad-credentials-overlay.loading .cerby-bad-credentials-overlay-body {
+  gap: 20px;
+  margin-top: 0;
+}
+
+.cerby-bad-credentials-overlay.loading .cerby-bad-credentials-overlay-content {
+  gap: 20px;
+}
+
+.cerby-bad-credentials-overlay-text-section {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  align-items: center;
+  width: 100%;
+}
+
+.cerby-bad-credentials-overlay-heading {
+  font-family: "Proxima Nova", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-weight: 600;
+  font-size: 24px;
+  line-height: 32px;
+  color: #1f2f4d;
+  text-align: center;
+  margin: 0;
+}
+
+.cerby-bad-credentials-overlay-description {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  width: 100%;
+}
+
+.cerby-bad-credentials-overlay-text {
+  font-family: "Proxima Nova", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 18px;
+  color: #0a111d;
+  margin: 0;
+  width: 515px;
+  max-width: 100%;
+}
+
+.cerby-bad-credentials-overlay-text strong {
+  font-family: "Proxima Nova", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-weight: 600;
+}
+
+.cerby-bad-credentials-overlay-last-login {
+  font-family: "Proxima Nova", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 16px;
+  color: #4f6489;
+  margin: 0;
+  width: min-content;
+  white-space: nowrap;
+}
+
+.cerby-bad-credentials-overlay-last-login strong {
+  font-family: "Proxima Nova", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-weight: 600;
+  line-height: 13px;
+}
+
+.cerby-bad-credentials-overlay-actions {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.cerby-bad-credentials-overlay-button {
+  font-family: "Proxima Nova", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 15px;
+  padding: 0 12px;
+  height: 40px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.cerby-bad-credentials-overlay-button-secondary {
+  background: #ffffff;
+  border: 1px solid #e3e8ee;
+  color: #4f6489;
+}
+
+.cerby-bad-credentials-overlay-button-secondary:hover {
+  background: #f5f5f5;
+  border-color: #d0d5db;
+}
+
+.cerby-bad-credentials-overlay-button-primary {
+  background: #007da8;
+  color: #ffffff;
+}
+
+.cerby-bad-credentials-overlay-button-primary:hover {
+  background: #006a8f;
+}
+
+/* Login Suggestion Modal - floating top-right (like Google "Sign in with Gmail") */
+.cerby-login-suggestion-modal {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 2147483646;
+  font-family: "Proxima Nova", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.22s ease-in, transform 0.22s ease-in;
+}
+
+.cerby-login-suggestion-modal.cerby-login-suggestion-modal-visible {
+  pointer-events: auto;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.cerby-login-suggestion-modal-inner {
+  background: #ffffff;
+  border: 1px solid #e3e8ee;
+  border-radius: 12px;
+  box-shadow: 0 18px 32px rgba(0, 0, 0, 0.16), 0 5px 12px rgba(0, 0, 0, 0.12);
+  width: 397px;
+  overflow: hidden;
+}
+
+/* Expanded accounts modal (from inline expand): 2x taller + search bar */
+.cerby-expanded-accounts-modal .cerby-login-suggestion-modal-inner {
+  display: flex;
+  flex-direction: column;
+  max-height: 640px;
+}
+
+.cerby-expanded-accounts-modal .cerby-login-suggestion-list {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+}
+
+.cerby-expanded-accounts-modal__search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-bottom: 1px solid #e3e8ee;
+  background: #ffffff;
+  flex-shrink: 0;
+}
+
+.cerby-expanded-accounts-modal__search-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  opacity: 0.6;
+}
+
+.cerby-expanded-accounts-modal__search-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: "Proxima Nova", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 14px;
+  line-height: 20px;
+  color: #1f2f4d;
+}
+
+.cerby-expanded-accounts-modal__search-input::placeholder {
+  color: #7187ad;
+}
+
+.cerby-login-suggestion-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e3e8ee;
+}
+
+.cerby-login-suggestion-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.cerby-login-suggestion-cerby-logo {
+  width: 32px;
+  height: 30px;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+
+.cerby-login-suggestion-heading {
+  font-weight: 600;
+  font-size: 18px;
+  line-height: 22px;
+  color: #1f2f4d;
+  margin: 0;
+}
+
+.cerby-login-suggestion-close {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.cerby-login-suggestion-close:hover {
+  background: #f0f2f5;
+}
+
+.cerby-login-suggestion-close-icon {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
+.cerby-login-suggestion-list {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 0;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.cerby-login-suggestion-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 20px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  transition: background-color 0.2s;
+  border-radius: 0;
+}
+
+.cerby-login-suggestion-card:hover,
+.cerby-login-suggestion-card:focus-visible {
+  background: #f0f2f5;
+  outline: none;
+}
+
+.cerby-login-suggestion-card:focus-visible {
+  outline: 2px solid #2698bf;
+  outline-offset: -2px;
+}
+
+.cerby-login-suggestion-card-logo {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+}
+
+.cerby-login-suggestion-logo-placeholder {
+  width: 32px;
+  height: 32px;
+  border-radius: 5px;
+  background: #f4f4f4;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cerby-login-suggestion-logo-placeholder.cerby-login-suggestion-make-logo {
+  background: #673AB7;
+  padding: 8px;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.cerby-login-suggestion-app-logo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.cerby-login-suggestion-app-logo.cerby-login-suggestion-app-logo-make {
+  background: transparent;
+}
+
+.cerby-login-suggestion-logo-fallback {
+  font-weight: 600;
+  font-size: 14px;
+  color: #4f6489;
+  display: none;
+}
+
+.cerby-login-suggestion-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.cerby-login-suggestion-name {
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 16px;
+  color: #1f2f4d;
+  margin: 0 0 2px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cerby-login-suggestion-email {
+  font-size: 12px;
+  line-height: 14px;
+  color: #4f6489;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cerby-login-suggestion-card-right {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cerby-login-suggestion-card-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cerby-login-suggestion-sso {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px 2px 2px;
+  border-radius: 32px;
+  background: #0a111d;
+}
+
+.cerby-login-suggestion-sso-text {
+  font-size: 12px;
+  line-height: 13px;
+  font-weight: 600;
+  color: #f8f8f8;
+  white-space: nowrap;
+}
+
+.cerby-login-suggestion-sso-icon {
+  width: 12px;
+  height: 12px;
+  display: block;
+  flex-shrink: 0;
+}
+
+.cerby-login-suggestion-auto-login {
+  display: none;
+  align-items: center;
+  gap: 6px;
+}
+
+.cerby-login-suggestion-card:hover .cerby-login-suggestion-auto-login,
+.cerby-login-suggestion-card:focus-visible .cerby-login-suggestion-auto-login {
+  display: flex;
+}
+
+.cerby-login-suggestion-card:hover .cerby-login-suggestion-card-badge,
+.cerby-login-suggestion-card:focus-visible .cerby-login-suggestion-card-badge {
+  display: none;
+}
+
+.cerby-login-suggestion-login-icon {
+  width: 16px;
+  height: 16px;
+  display: block;
+  flex-shrink: 0;
+  transform: rotate(-90deg);
+}
+
+.cerby-login-suggestion-auto-login-text {
+  font-size: 13px;
+  line-height: 15px;
+  font-weight: 500;
+  color: #1f2f4d;
+  white-space: nowrap;
+}
+
+

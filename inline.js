@@ -1,0 +1,2235 @@
+// Inline extension content script for signup experiences
+console.log('Cerby: Inline script loaded');
+
+const chromeApi = typeof chrome !== 'undefined' ? chrome :
+  (typeof browser !== 'undefined' ? browser : null);
+
+console.log('Cerby: Chrome API available:', !!chromeApi);
+
+const SIGNUP_KEYWORDS = [
+  'signup',
+  'sign-up',
+  'sign_up',
+  'register',
+  'create-account',
+  'createaccount',
+  'join-now',
+  'joinnow'
+];
+
+const ELIGIBLE_INPUT_TYPES = ['email', 'text', 'search'];
+const ELIGIBLE_PASSWORD_TYPES = ['password'];
+const MODULE_ID = 'cerby-inline-module';
+const MODULE_EMAIL_TEXT_ID = 'cerby-inline-module-email';
+const MODULE_PASSWORD_TEXT_ID = 'cerby-inline-module-password';
+const MODULE_OFFSET = 8;
+const SAVE_ACCOUNT_MODAL_ID = 'cerby-save-account-modal';
+const INLINE_ACCOUNT_DROPDOWN_ID = 'cerby-inline-account-dropdown';
+
+let workspaceEmail = 'workspace@example.com';
+let moduleElement = null;
+let currentInput = null;
+let mutationObserver = null;
+let pendingViewportUpdate = false;
+let detachInputListener = null;
+let moduleSaveButton = null;
+let saveAccountModal = null;
+let inlineAccountDropdown = null;
+
+console.log('Cerby: Initializing inline extension');
+initializeInlineExtension();
+
+// Debug: Expose test function to window for manual testing
+if (typeof window !== 'undefined') {
+  window.cerbyTestModal = function() {
+    console.log('Cerby: Manual test - opening modal');
+    const testPassword = 'TestPassword123!@#';
+    openSaveAccountModal(testPassword);
+  };
+  console.log('Cerby: Test function available - call window.cerbyTestModal() to test modal');
+}
+
+async function initializeInlineExtension() {
+  console.log('Cerby: initializeInlineExtension called');
+  if (chromeApi?.storage?.onChanged) {
+    chromeApi.storage.onChanged.addListener(handleStorageChanges);
+  }
+
+  if (!isSignupContext()) {
+    // Some signup experiences render content dynamically; observe for later matches.
+    observeDynamicContext();
+  }
+
+  workspaceEmail = await getWorkspaceEmail();
+
+  document.addEventListener('focusin', handleFocusIn, true);
+  document.addEventListener('mousedown', handleDismiss, true);
+  document.addEventListener('keydown', handleKeydownDismiss, true);
+  window.addEventListener('blur', hideModule, true);
+  window.addEventListener('scroll', handleViewportChange, true);
+  window.addEventListener('resize', handleViewportChange, true);
+  window.addEventListener('orientationchange', handleViewportChange, true);
+
+  // Login suggestion modal: show when on a login page and user has accounts for this site
+  tryShowLoginSuggestionModal();
+}
+
+function handleStorageChanges(changes, areaName) {
+  if (areaName !== 'local' || !changes.workspaceEmail) {
+    return;
+  }
+
+  const newEmail = changes.workspaceEmail.newValue;
+  if (typeof newEmail === 'string' && newEmail.trim().length > 0) {
+    workspaceEmail = newEmail.trim();
+    updateModuleEmail(workspaceEmail);
+  }
+}
+
+function isSignupContext() {
+  const href = window.location.href.toLowerCase();
+  const pathname = window.location.pathname.toLowerCase();
+  const title = document.title.toLowerCase();
+
+  return SIGNUP_KEYWORDS.some(keyword =>
+    href.includes(keyword) ||
+    pathname.includes(keyword) ||
+    title.includes(keyword)
+  );
+}
+
+function observeDynamicContext() {
+  if (mutationObserver) {
+    return;
+  }
+
+  mutationObserver = new MutationObserver((mutations, observer) => {
+    const hasRelevantText = SIGNUP_KEYWORDS.some(keyword =>
+      document.body?.textContent?.toLowerCase().includes(keyword)
+    );
+
+    if (hasRelevantText) {
+      observer.disconnect();
+      mutationObserver = null;
+    }
+  });
+
+  try {
+    mutationObserver.observe(document.documentElement, { childList: true, subtree: true });
+  } catch (error) {
+    // Ignore observer errors (e.g., if documentElement is unavailable)
+  }
+}
+
+function handleFocusIn(event) {
+  const target = event.target;
+
+  if (!(target instanceof HTMLInputElement)) {
+    if (moduleElement && !moduleContainsTarget(target)) hideModule();
+    if (inlineAccountDropdown && !inlineAccountDropdown.contains(target)) hideInlineAccountDropdown();
+    return;
+  }
+
+  const isEmailField = isEligibleInput(target);
+  const isPasswordField = isEligiblePasswordInput(target);
+  const isLoginContext = isLoginPage();
+
+  if (!isEmailField && !isPasswordField) {
+    if (moduleElement && !moduleContainsTarget(target)) hideModule();
+    if (inlineAccountDropdown && !inlineAccountDropdown.contains(target)) hideInlineAccountDropdown();
+    return;
+  }
+
+  currentInput = target;
+
+  if (isLoginContext) {
+    hideModule();
+    tryShowInlineAccountDropdown(target, isPasswordField ? 'password' : 'email');
+  } else if (isSignupContext()) {
+    hideInlineAccountDropdown();
+    showModule(target, isPasswordField ? 'password' : 'email');
+  } else {
+    hideModule();
+    hideInlineAccountDropdown();
+  }
+}
+
+function moduleContainsTarget(target) {
+  return moduleElement && moduleElement.contains(target);
+}
+
+function handleDismiss(event) {
+  const target = event.target;
+  const inModule = moduleElement && (moduleContainsTarget(target) || target === currentInput);
+  const inDropdown = inlineAccountDropdown && (inlineAccountDropdown.contains(target) || target === currentInput);
+  if (inModule || inDropdown) return;
+  hideModule();
+  hideInlineAccountDropdown();
+}
+
+function handleKeydownDismiss(event) {
+  if (event.key === 'Escape') {
+    hideModule();
+    hideInlineAccountDropdown();
+    return;
+  }
+
+  if (event.key === 'Tab' && (moduleElement || inlineAccountDropdown)) {
+    const root = inlineAccountDropdown || moduleElement;
+    const focusableElements = getFocusableElements(root);
+    if (!focusableElements.length) {
+      return;
+    }
+
+    const first = focusableElements[0];
+    const last = focusableElements[focusableElements.length - 1];
+
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
+}
+
+function getFocusableElements(root) {
+  if (!root) return [];
+  return Array.from(
+    root.querySelectorAll('button, [href], [tabindex]:not([tabindex="-1"])')
+  ).filter(el => !el.hasAttribute('disabled'));
+}
+
+async function getWorkspaceEmail() {
+  if (!chromeApi || !chromeApi.storage) {
+    return workspaceEmail;
+  }
+
+  return new Promise(resolve => {
+    try {
+      chromeApi.storage.local.get(['workspaceEmail'], result => {
+        if (chromeApi.runtime && chromeApi.runtime.lastError) {
+          resolve(workspaceEmail);
+          return;
+        }
+
+        const storedEmail = result?.workspaceEmail;
+        if (typeof storedEmail === 'string' && storedEmail.trim().length > 0) {
+          resolve(storedEmail.trim());
+        } else {
+          resolve(workspaceEmail);
+        }
+      });
+    } catch (error) {
+      resolve(workspaceEmail);
+    }
+  });
+}
+
+function isEligibleInput(input) {
+  const type = (input.getAttribute('type') || 'text').toLowerCase();
+  if (!ELIGIBLE_INPUT_TYPES.includes(type)) {
+    return false;
+  }
+
+  const datasetHint = input.dataset?.cerbyInlineTouched === 'true';
+  const name = (input.getAttribute('name') || '').toLowerCase();
+  const id = (input.getAttribute('id') || '').toLowerCase();
+  const autocomplete = (input.getAttribute('autocomplete') || '').toLowerCase();
+  const placeholder = (input.getAttribute('placeholder') || '').toLowerCase();
+
+  const hintMatches = [name, id, autocomplete, placeholder]
+    .filter(Boolean)
+    .some(value =>
+      value.includes('email') ||
+      value.includes('user') ||
+      value.includes('login') ||
+      value.includes('account')
+    );
+
+  return datasetHint || hintMatches;
+}
+
+function isEligiblePasswordInput(input) {
+  const type = (input.getAttribute('type') || 'text').toLowerCase();
+  if (!ELIGIBLE_PASSWORD_TYPES.includes(type)) {
+    return false;
+  }
+
+  const datasetHint = input.dataset?.cerbyInlinePasswordTouched === 'true';
+  const name = (input.getAttribute('name') || '').toLowerCase();
+  const id = (input.getAttribute('id') || '').toLowerCase();
+  const autocomplete = (input.getAttribute('autocomplete') || '').toLowerCase();
+  const placeholder = (input.getAttribute('placeholder') || '').toLowerCase();
+
+  const hintMatches = [name, id, autocomplete, placeholder]
+    .filter(Boolean)
+    .some(value =>
+      value.includes('password') ||
+      value.includes('pass') ||
+      value.includes('pwd')
+    );
+
+  return datasetHint || hintMatches;
+}
+
+function generatePassword() {
+  const length = 20;
+  const lowercase = 'abcdefghijklmnopqrstuvwxyz';
+  const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const numbers = '0123456789';
+  const special = '!@#$%^&*()_+-=[]{}|;:,.<>?';
+  const allChars = lowercase + uppercase + numbers + special;
+  
+  let password = '';
+  
+  // Ensure at least one of each type
+  password += lowercase[Math.floor(Math.random() * lowercase.length)];
+  password += uppercase[Math.floor(Math.random() * uppercase.length)];
+  password += numbers[Math.floor(Math.random() * numbers.length)];
+  password += special[Math.floor(Math.random() * special.length)];
+  
+  // Fill the rest randomly
+  for (let i = password.length; i < length; i++) {
+    password += allChars[Math.floor(Math.random() * allChars.length)];
+  }
+  
+  // Shuffle the password
+  return password.split('').sort(() => Math.random() - 0.5).join('');
+}
+
+function highlightPasswordChars(password) {
+  // Highlight numbers and special characters in teal (#007da8)
+  const parts = [];
+  let currentPart = '';
+  let currentColor = '#1f2f4d'; // Default dark color
+  
+  for (let i = 0; i < password.length; i++) {
+    const char = password[i];
+    const isNumber = /[0-9]/.test(char);
+    const isSpecial = /[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(char);
+    const shouldHighlight = isNumber || isSpecial;
+    const charColor = shouldHighlight ? '#007da8' : '#1f2f4d';
+    
+    if (charColor !== currentColor && currentPart) {
+      parts.push({ text: currentPart, color: currentColor });
+      currentPart = '';
+    }
+    
+    currentColor = charColor;
+    currentPart += char;
+  }
+  
+  if (currentPart) {
+    parts.push({ text: currentPart, color: currentColor });
+  }
+  
+  return parts;
+}
+
+function showModule(input, moduleType = 'email') {
+  console.log('Cerby: showModule called with type:', moduleType);
+  
+  // Remove existing module if switching types
+  if (moduleElement && moduleElement.dataset.moduleType !== moduleType) {
+    if (moduleElement.isConnected) {
+      moduleElement.remove();
+    }
+    moduleElement = null;
+  }
+
+  if (!moduleElement) {
+    console.log('Cerby: Creating new module element');
+    moduleElement = createModuleElement(moduleType);
+    console.log('Cerby: Module element created, type:', moduleElement.dataset.moduleType);
+  }
+
+  if (!moduleElement.isConnected) {
+    document.body.appendChild(moduleElement);
+  }
+
+  if (moduleType === 'password') {
+    const password = generatePassword();
+    updateModulePassword(password);
+  } else {
+    updateModuleEmail(workspaceEmail);
+  }
+  
+  associateModuleWithInput(moduleElement, input, moduleType);
+
+  requestAnimationFrame(() => {
+    const inputRect = input.getBoundingClientRect();
+    if (inputRect.width === 0 && inputRect.height === 0) {
+      // Input may be hidden; avoid showing module in that case.
+      hideModule();
+      return;
+    }
+
+    updateModulePosition();
+    moduleElement.classList.add('cerby-inline-module--visible');
+  });
+}
+
+function hideModule() {
+  if (!moduleElement) {
+    return;
+  }
+  if (detachInputListener) {
+    detachInputListener();
+    detachInputListener = null;
+  }
+  moduleElement.classList.remove('cerby-inline-module--visible');
+  moduleElement.removeAttribute('data-for-input');
+  delete moduleElement.dataset.cerbyFromLoginPage;
+  setModuleState('suggestion');
+  currentInput = null;
+}
+
+function createModuleElement(moduleType = 'email') {
+  console.log('Cerby: createModuleElement called with type:', moduleType);
+  const container = document.createElement('div');
+  container.id = MODULE_ID;
+  container.className = 'cerby-inline-module';
+  container.setAttribute('role', 'note');
+  container.style.position = 'absolute';
+  container.style.top = '0px';
+  container.style.left = '0px';
+  container.setAttribute('aria-label', 'Cerby password manager inline module');
+  container.setAttribute('data-cerby-inline', 'true');
+  container.dataset.state = 'suggestion';
+  container.dataset.moduleType = moduleType;
+
+  const suggestion = document.createElement('div');
+  suggestion.className = 'cerby-inline-module__suggestion';
+  container.appendChild(suggestion);
+  
+  // Make the entire suggestion area clickable
+  suggestion.style.cursor = 'pointer';
+  suggestion.style.userSelect = 'none';
+  
+  const handleSuggestionClick = function(e) {
+    console.log('Cerby: Suggestion area clicked, moduleType:', moduleType, 'target:', e.target.tagName, e.target.className);
+    // Only handle if not clicking on settings button
+    if (!e.target.closest('.cerby-inline-module__settings-button')) {
+      if (moduleType === 'password') {
+        console.log('Cerby: Calling handlePasswordSuggestionClick from suggestion');
+        handlePasswordSuggestionClick(e);
+      } else {
+        handleEmailSuggestionClick(e);
+      }
+    } else {
+      console.log('Cerby: Click was on settings button, ignoring');
+    }
+  };
+  
+  // Make the entire suggestion area clickable - handle clicks on any child element
+  // Use both capture and bubble phases to ensure we catch all clicks
+  const handleSuggestionAreaClick = function(e) {
+    console.log('Cerby: Click detected in suggestion area, moduleType:', moduleType, 'target:', e.target.tagName, e.target.className, 'currentTarget:', e.currentTarget.className);
+    
+    // Check if click is on settings button or its children - let it handle its own click
+    const settingsButton = e.target.closest('.cerby-inline-module__settings-button');
+    if (settingsButton) {
+      console.log('Cerby: Click was on settings button, ignoring');
+      return; // Let settings button handle its own click
+    }
+    
+    // Handle click anywhere else in the suggestion area
+    console.log('Cerby: Processing click for', moduleType, 'module');
+    
+    if (moduleType === 'password') {
+      console.log('Cerby: Calling handlePasswordSuggestionClick from suggestion');
+      handlePasswordSuggestionClick(e);
+    } else {
+      handleEmailSuggestionClick(e);
+    }
+  };
+  
+  // Add listener in capture phase to catch clicks early
+  suggestion.addEventListener('click', handleSuggestionAreaClick, true);
+  // Also add in bubble phase as backup
+  suggestion.addEventListener('click', handleSuggestionAreaClick, false);
+  
+  // Use a simpler approach - trigger on mousedown and check on mouseup
+  // Store state on window to persist across event handlers
+  if (!window._cerbyClickState) {
+    window._cerbyClickState = {};
+  }
+  
+  suggestion.addEventListener('mousedown', function(e) {
+    console.log('Cerby: Suggestion mousedown detected, target:', e.target.tagName, e.target.className);
+    // Only track if not on settings button
+    if (!e.target.closest('.cerby-inline-module__settings-button')) {
+      const clickId = 'cerby_' + Date.now();
+      window._cerbyClickState[clickId] = {
+        element: suggestion,
+        moduleType: moduleType,
+        time: Date.now(),
+        target: e.target
+      };
+      suggestion.dataset.cerbyClickId = clickId;
+      console.log('Cerby: Tracking mousedown for click action, clickId:', clickId);
+    }
+  }, true);
+  
+  // Listen on document for mouseup - this will catch it even if it happens outside
+  const handleGlobalMouseUp = function(e) {
+    console.log('Cerby: Global mouseup detected, target:', e.target.tagName, e.target.className);
+    
+    // Check if mouseup is on settings button - be more specific
+    const settingsButton = e.target.closest('.cerby-inline-module__settings-button');
+    if (settingsButton) {
+      console.log('Cerby: Mouseup on settings button, ignoring');
+      return;
+    }
+    
+    // Find all suggestions with pending clicks
+    const allSuggestions = document.querySelectorAll('.cerby-inline-module__suggestion[data-cerby-click-id]');
+    console.log('Cerby: Found', allSuggestions.length, 'suggestions with pending clicks');
+    
+    for (const sugg of allSuggestions) {
+      const clickId = sugg.dataset.cerbyClickId;
+      console.log('Cerby: Checking suggestion with clickId:', clickId);
+      
+      if (clickId && window._cerbyClickState[clickId]) {
+        const state = window._cerbyClickState[clickId];
+        const timeDiff = Date.now() - state.time;
+        const isInSuggestion = sugg.contains(e.target);
+        
+        console.log('Cerby: Click state check:', {
+          clickId,
+          timeDiff,
+          isInSuggestion,
+          targetTag: e.target.tagName,
+          targetClass: e.target.className,
+          moduleType: state.moduleType
+        });
+        
+        // If mousedown happened in suggestion and mouseup is within reasonable time,
+        // trigger the action. Since mousedown was in suggestion, we trust that the user
+        // intended to click it, even if mouseup happens slightly outside (due to drag or event capture)
+        // But don't trigger if mouseup is on settings button or if time is too long
+        if (timeDiff < 500 && !settingsButton) {
+          // For quick clicks (< 500ms), trigger if mousedown was in suggestion
+          // This handles cases where mouseup gets captured by other elements
+          console.log('Cerby: Valid click detected on suggestion, moduleType:', state.moduleType, 'isInSuggestion:', isInSuggestion, 'timeDiff:', timeDiff);
+          e.preventDefault();
+          e.stopPropagation();
+          
+          // Directly call the appropriate handler
+          if (state.moduleType === 'password') {
+            console.log('Cerby: Calling handlePasswordSuggestionClick from global mouseup');
+            setTimeout(() => {
+              console.log('Cerby: Executing handlePasswordSuggestionClick');
+              try {
+                handlePasswordSuggestionClick(e);
+              } catch (error) {
+                console.error('Cerby: Error in handlePasswordSuggestionClick:', error);
+                console.error(error.stack);
+              }
+            }, 10);
+          } else {
+            setTimeout(() => {
+              handleEmailSuggestionClick(e);
+            }, 10);
+          }
+          
+          // Clean up
+          delete window._cerbyClickState[clickId];
+          delete sugg.dataset.cerbyClickId;
+          break;
+        } else {
+          console.log('Cerby: Click not valid:', {
+            isInSuggestion,
+            timeDiff,
+            timeValid: timeDiff < 500,
+            hasSettingsButton: !!settingsButton,
+            targetTag: e.target.tagName
+          });
+        }
+        
+        if (timeDiff >= 1000) {
+          // Clean up old clicks
+          console.log('Cerby: Cleaning up old click, timeDiff:', timeDiff);
+          delete window._cerbyClickState[clickId];
+          delete sugg.dataset.cerbyClickId;
+        }
+      }
+    }
+  };
+  
+  // Add global listener once
+  if (!window._cerbyGlobalMouseUpListener) {
+    document.addEventListener('mouseup', handleGlobalMouseUp, true);
+    window._cerbyGlobalMouseUpListener = true;
+    console.log('Cerby: Global mouseup listener attached');
+  }
+  
+  // Add pointer events as well
+  suggestion.addEventListener('pointerdown', function(e) {
+    console.log('Cerby: Suggestion pointerdown detected');
+  });
+  
+  console.log('Cerby: Suggestion area listeners attached for type:', moduleType, 'element:', suggestion);
+
+  const label = document.createElement('p');
+  label.className = 'cerby-inline-module__label';
+  label.style.cursor = 'pointer';
+  label.style.userSelect = 'none';
+  if (moduleType === 'password') {
+    label.textContent = 'Use a Cerby-generated password';
+  } else {
+    label.textContent = 'Use your workspace email address';
+  }
+  suggestion.appendChild(label);
+
+  const row = document.createElement('div');
+  row.className = 'cerby-inline-module__row';
+  row.style.cursor = 'pointer';
+  row.style.userSelect = 'none';
+  suggestion.appendChild(row);
+
+  if (moduleType === 'password') {
+    console.log('Cerby: Creating password module elements');
+    const passwordContainer = document.createElement('div');
+    passwordContainer.className = 'cerby-inline-module__password-container';
+    passwordContainer.style.cursor = 'pointer';
+    passwordContainer.style.userSelect = 'none';
+    
+    const passwordValue = document.createElement('p');
+    passwordValue.id = MODULE_PASSWORD_TEXT_ID;
+    passwordValue.className = 'cerby-inline-module__password-value';
+    passwordValue.style.cursor = 'pointer';
+    passwordValue.style.userSelect = 'none';
+    passwordValue.setAttribute('tabindex', '0');
+    passwordValue.setAttribute('role', 'button');
+    
+    // Don't add separate click handlers - let clicks bubble up to suggestion area
+    // Only add keyboard support for accessibility
+    passwordValue.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        console.log('Cerby: Password value keydown', e.key);
+        e.preventDefault();
+        e.stopPropagation();
+        handlePasswordSuggestionClick(e);
+      }
+    });
+    
+    console.log('Cerby: Password value element created');
+    
+    passwordContainer.appendChild(passwordValue);
+    
+    row.appendChild(passwordContainer);
+  } else {
+    const emailValue = document.createElement('span');
+    emailValue.id = MODULE_EMAIL_TEXT_ID;
+    emailValue.className = 'cerby-inline-module__email-value';
+    emailValue.textContent = workspaceEmail;
+    emailValue.style.cursor = 'pointer';
+    row.appendChild(emailValue);
+  }
+
+  const settingsButton = document.createElement('button');
+  settingsButton.type = 'button';
+  settingsButton.className = 'cerby-inline-module__settings-button';
+  settingsButton.setAttribute('aria-label', 'Open Cerby settings');
+  settingsButton.addEventListener('click', handleSettingsClick);
+
+  const settingsIcon = document.createElement('img');
+  settingsIcon.className = 'cerby-inline-module__settings-icon';
+  settingsIcon.alt = '';
+  settingsIcon.src = chromeApi?.runtime?.getURL
+    ? chromeApi.runtime.getURL('assets/inline-settings-icon.svg')
+    : 'assets/inline-settings-icon.svg';
+
+  settingsButton.appendChild(settingsIcon);
+  row.appendChild(settingsButton);
+
+  const saveContainer = document.createElement('div');
+  saveContainer.className = 'cerby-inline-module__save-container';
+
+  moduleSaveButton = document.createElement('button');
+  moduleSaveButton.type = 'button';
+  moduleSaveButton.className = 'cerby-inline-module__save-button';
+  moduleSaveButton.textContent = 'Save in Cerby';
+  moduleSaveButton.addEventListener('click', handleSaveClick);
+
+  saveContainer.appendChild(moduleSaveButton);
+  container.appendChild(saveContainer);
+
+  // Allow keyboard focusing.
+  container.tabIndex = -1;
+
+  // Debug: Log that module was created
+  console.log('Cerby: Module element created successfully, suggestion element:', suggestion, 'has click listeners:', suggestion.onclick !== null || suggestion.addEventListener !== undefined);
+
+  return container;
+}
+
+function updateModuleEmail(email) {
+  const emailNode = moduleElement?.querySelector(`#${MODULE_EMAIL_TEXT_ID}`);
+  if (!emailNode) {
+    return;
+  }
+
+  emailNode.textContent = email;
+}
+
+function updateModulePassword(password) {
+  const passwordNode = moduleElement?.querySelector(`#${MODULE_PASSWORD_TEXT_ID}`);
+  if (!passwordNode) {
+    return;
+  }
+
+  // Clear existing content
+  passwordNode.innerHTML = '';
+  
+  // Create highlighted password display
+  const parts = highlightPasswordChars(password);
+  parts.forEach(part => {
+    const span = document.createElement('span');
+    span.textContent = part.text;
+    span.style.color = part.color;
+    passwordNode.appendChild(span);
+  });
+  
+  // Store the plain password for filling
+  passwordNode.dataset.plainPassword = password;
+}
+
+function handlePasswordSuggestionClick(event) {
+  event.preventDefault();
+  event.stopPropagation();
+
+  console.log('Cerby: Password suggestion clicked');
+
+  let input = null;
+  if (moduleElement && moduleElement._cerbyInput) {
+    input = moduleElement._cerbyInput;
+  } else if (currentInput) {
+    input = currentInput;
+  } else if (moduleElement) {
+    const inputId = moduleElement.getAttribute('data-for-input');
+    if (inputId) {
+      const allInputs = document.querySelectorAll('input');
+      for (const inp of allInputs) {
+        if (inp.dataset.cerbyInlineId === inputId) {
+          input = inp;
+          break;
+        }
+      }
+    }
+  }
+
+  if (!input || !(input instanceof HTMLInputElement)) {
+    console.warn('Cerby inline: Could not find password input element');
+    return;
+  }
+
+  // Get the password from the module
+  const passwordNode = moduleElement?.querySelector(`#${MODULE_PASSWORD_TEXT_ID}`);
+  const password = passwordNode?.dataset?.plainPassword || '';
+  
+  if (!password) {
+    console.warn('Cerby inline: Could not find password to fill');
+    return;
+  }
+
+  console.log('Cerby: Filling password and opening modal');
+
+  input.focus();
+
+  try {
+    const descriptor = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+    if (descriptor && descriptor.set) {
+      descriptor.set.call(input, password);
+    } else {
+      input.value = password;
+    }
+  } catch (e) {
+    input.value = password;
+  }
+
+  const inputEvent = new Event('input', { bubbles: true, cancelable: true });
+  input.dispatchEvent(inputEvent);
+
+  const changeEvent = new Event('change', { bubbles: true, cancelable: true });
+  input.dispatchEvent(changeEvent);
+
+  if (input.setSelectionRange) {
+    try {
+      input.setSelectionRange(password.length, password.length);
+    } catch (e) {
+      // Ignore errors
+    }
+  }
+
+  // Open the save account modal immediately
+  try {
+    console.log('Cerby: Calling openSaveAccountModal with password:', password.substring(0, 5) + '...');
+    openSaveAccountModal(password);
+    console.log('Cerby: openSaveAccountModal call completed');
+  } catch (error) {
+    console.error('Cerby: Error opening save account modal:', error);
+    console.error(error.stack);
+  }
+}
+
+function extractDomain(url) {
+  try {
+    const urlObj = new URL(url);
+    let hostname = urlObj.hostname;
+    // Remove www. prefix
+    if (hostname.startsWith('www.')) {
+      hostname = hostname.substring(4);
+    }
+    return hostname;
+  } catch (e) {
+    return null;
+  }
+}
+
+function getProviderLogoUrl(domain) {
+  if (!domain) return '';
+  
+  // Try Clearbit first
+  return `https://logo.clearbit.com/${domain}`;
+}
+
+function extractAccountName(email) {
+  if (!email || typeof email !== 'string') {
+    return 'new_account';
+  }
+  
+  const emailParts = email.split('@');
+  if (emailParts.length > 0 && emailParts[0].trim()) {
+    return emailParts[0].trim();
+  }
+  
+  return 'new_account';
+}
+
+function getEmailFromPage() {
+  // Try to find email input field
+  const emailInputs = document.querySelectorAll('input[type="email"], input[name*="email" i], input[id*="email" i]');
+  for (const input of emailInputs) {
+    if (input.value && input.value.includes('@')) {
+      return input.value.trim();
+    }
+  }
+  
+  // Fallback to workspace email
+  return workspaceEmail;
+}
+
+function createSaveAccountModal() {
+  if (saveAccountModal && saveAccountModal.isConnected) {
+    return saveAccountModal;
+  }
+
+  // Remove existing modal if it exists but isn't connected
+  if (saveAccountModal && !saveAccountModal.isConnected) {
+    saveAccountModal = null;
+  }
+
+  const modal = document.createElement('div');
+  modal.id = SAVE_ACCOUNT_MODAL_ID;
+  modal.className = 'cerby-save-account-modal';
+  modal.setAttribute('role', 'dialog');
+  modal.setAttribute('aria-labelledby', 'cerby-modal-title');
+  modal.setAttribute('aria-modal', 'true');
+  modal.style.display = 'none';
+
+  const container = document.createElement('div');
+  container.className = 'cerby-save-account-modal__container';
+
+  // Header
+  const header = document.createElement('div');
+  header.className = 'cerby-save-account-modal__header';
+
+  const headerContent = document.createElement('div');
+  headerContent.className = 'cerby-save-account-modal__header-content';
+
+  const logoContainer = document.createElement('div');
+  logoContainer.className = 'cerby-save-account-modal__logo-container';
+
+  const cerbyLogo = document.createElement('img');
+  cerbyLogo.className = 'cerby-save-account-modal__cerby-logo';
+  cerbyLogo.alt = 'Cerby';
+  cerbyLogo.src = chromeApi?.runtime?.getURL
+    ? chromeApi.runtime.getURL('assets/cerby-logo-modal.svg')
+    : 'assets/cerby-logo-modal.svg';
+
+  logoContainer.appendChild(cerbyLogo);
+
+  const title = document.createElement('p');
+  title.id = 'cerby-modal-title';
+  title.className = 'cerby-save-account-modal__title';
+  title.textContent = 'Save account?';
+
+  headerContent.appendChild(logoContainer);
+  headerContent.appendChild(title);
+  
+  // Store reference for width constraint
+  modal._headerContent = headerContent;
+
+  const closeButton = document.createElement('button');
+  closeButton.type = 'button';
+  closeButton.className = 'cerby-save-account-modal__close-button';
+  closeButton.setAttribute('aria-label', 'Close modal');
+  closeButton.addEventListener('click', closeSaveAccountModal);
+
+  const closeIcon = document.createElement('div');
+  closeIcon.className = 'cerby-save-account-modal__close-icon';
+  closeButton.appendChild(closeIcon);
+
+  header.appendChild(headerContent);
+  header.appendChild(closeButton);
+
+  // Content
+  const content = document.createElement('div');
+  content.className = 'cerby-save-account-modal__content';
+
+  const fieldsContainer = document.createElement('div');
+  fieldsContainer.className = 'cerby-save-account-modal__fields';
+
+  const accountRow = document.createElement('div');
+  accountRow.className = 'cerby-save-account-modal__account-row';
+
+  const providerLogoContainer = document.createElement('div');
+  providerLogoContainer.className = 'cerby-save-account-modal__provider-logo-container';
+
+  const providerLogo = document.createElement('img');
+  providerLogo.className = 'cerby-save-account-modal__provider-logo';
+  providerLogo.alt = '';
+  providerLogo.style.display = 'none';
+
+  providerLogoContainer.appendChild(providerLogo);
+
+  const accountNameContainer = document.createElement('div');
+  accountNameContainer.className = 'cerby-save-account-modal__account-name-container';
+
+  const accountNameDetail = document.createElement('div');
+  accountNameDetail.className = 'cerby-save-account-modal__account-name-detail';
+
+  const accountNameLabel = document.createElement('p');
+  accountNameLabel.className = 'cerby-save-account-modal__account-name-label';
+  accountNameLabel.textContent = 'Account name*';
+
+  const accountNameTextWrapper = document.createElement('div');
+  accountNameTextWrapper.className = 'cerby-save-account-modal__account-name-text-wrapper';
+
+  const accountNameText = document.createElement('p');
+  accountNameText.className = 'cerby-save-account-modal__account-name-text';
+  accountNameText.textContent = 'new_account';
+
+  accountNameTextWrapper.appendChild(accountNameText);
+  accountNameDetail.appendChild(accountNameLabel);
+  accountNameDetail.appendChild(accountNameTextWrapper);
+
+  // Hidden input for editing (shown when edit button is clicked)
+  const accountNameInput = document.createElement('input');
+  accountNameInput.type = 'text';
+  accountNameInput.className = 'cerby-save-account-modal__account-name-input';
+  accountNameInput.value = 'new_account';
+  accountNameInput.style.display = 'none';
+  accountNameInput.setAttribute('aria-label', 'Account name');
+
+  const editButton = document.createElement('button');
+  editButton.type = 'button';
+  editButton.className = 'cerby-save-account-modal__edit-button';
+  editButton.setAttribute('aria-label', 'Edit account name');
+  editButton.addEventListener('click', function() {
+    // Switch to input mode
+    accountNameText.style.display = 'none';
+    accountNameInput.style.display = 'block';
+    accountNameInput.value = accountNameText.textContent;
+    accountNameInput.focus();
+    accountNameInput.select();
+    
+    // Update text when input loses focus
+    accountNameInput.addEventListener('blur', function() {
+      if (accountNameInput.value.trim()) {
+        accountNameText.textContent = accountNameInput.value.trim();
+      }
+      accountNameText.style.display = 'block';
+      accountNameInput.style.display = 'none';
+    }, { once: true });
+    
+    // Also update on Enter key
+    accountNameInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        accountNameInput.blur();
+      }
+    }, { once: true });
+  });
+
+  const editIcon = document.createElement('img');
+  editIcon.className = 'cerby-save-account-modal__edit-icon';
+  editIcon.alt = '';
+  editIcon.src = chromeApi?.runtime?.getURL
+    ? chromeApi.runtime.getURL('assets/edit-icon.svg')
+    : 'assets/edit-icon.svg';
+
+  editButton.appendChild(editIcon);
+  
+  const accountNameRow = document.createElement('div');
+  accountNameRow.className = 'cerby-save-account-modal__account-name-row';
+  accountNameRow.appendChild(accountNameDetail);
+  accountNameRow.appendChild(editButton);
+
+  accountNameContainer.appendChild(accountNameRow);
+  accountNameContainer.appendChild(accountNameInput);
+
+  accountRow.appendChild(providerLogoContainer);
+  accountRow.appendChild(accountNameContainer);
+
+  fieldsContainer.appendChild(accountRow);
+  content.appendChild(fieldsContainer);
+
+  // Footer
+  const footer = document.createElement('div');
+  footer.className = 'cerby-save-account-modal__footer';
+
+  const footerContent = document.createElement('div');
+  footerContent.className = 'cerby-save-account-modal__footer-content';
+
+  const vaultDropdown = document.createElement('div');
+  vaultDropdown.className = 'cerby-save-account-modal__vault-dropdown';
+
+  const vaultInput = document.createElement('div');
+  vaultInput.className = 'cerby-save-account-modal__vault-input';
+  vaultInput.setAttribute('role', 'button');
+  vaultInput.setAttribute('tabindex', '0');
+  vaultInput.setAttribute('aria-label', 'Select vault');
+
+  const vaultText = document.createElement('p');
+  vaultText.className = 'cerby-save-account-modal__vault-text';
+  vaultText.textContent = 'Personal Vault';
+
+  const chevronIcon = document.createElement('img');
+  chevronIcon.className = 'cerby-save-account-modal__chevron-icon';
+  chevronIcon.alt = '';
+  chevronIcon.src = chromeApi?.runtime?.getURL
+    ? chromeApi.runtime.getURL('assets/chevron-down-icon.svg')
+    : 'assets/chevron-down-icon.svg';
+
+  vaultInput.appendChild(vaultText);
+  vaultInput.appendChild(chevronIcon);
+  vaultDropdown.appendChild(vaultInput);
+
+  const saveButton = document.createElement('button');
+  saveButton.type = 'button';
+  saveButton.className = 'cerby-save-account-modal__save-button';
+  saveButton.textContent = 'Save account';
+  saveButton.addEventListener('click', handleSaveAccount);
+
+  footerContent.appendChild(vaultDropdown);
+  footerContent.appendChild(saveButton);
+  footer.appendChild(footerContent);
+
+  container.appendChild(header);
+  container.appendChild(content);
+  container.appendChild(footer);
+  modal.appendChild(container);
+
+  // Store references
+  modal._providerLogo = providerLogo;
+  modal._accountNameText = accountNameText;
+  modal._accountNameInput = accountNameInput;
+  modal._editButton = editButton;
+
+  // Add backdrop click handler
+  modal.addEventListener('click', function(e) {
+    if (modal.style.display !== 'none') {
+      const container = modal.querySelector('.cerby-save-account-modal__container');
+      // Close if clicking on the backdrop (the modal itself but not the container)
+      if (e.target === modal || !container.contains(e.target)) {
+        closeSaveAccountModal();
+      }
+    }
+  });
+
+  // Ensure body exists before appending
+  if (!document.body) {
+    console.error('Cerby: document.body is not available');
+    return null;
+  }
+
+  try {
+    console.log('Cerby: Appending modal to body in createSaveAccountModal');
+    document.body.appendChild(modal);
+    saveAccountModal = modal;
+    console.log('Cerby: Modal appended, checking if in DOM:', document.body.contains(modal));
+    return modal;
+  } catch (error) {
+    console.error('Cerby: Error appending modal to body:', error);
+    return null;
+  }
+}
+
+function openSaveAccountModal(password) {
+  console.log('Cerby: openSaveAccountModal called with password length:', password?.length || 0);
+  try {
+    const modal = createSaveAccountModal();
+    if (!modal) {
+      console.error('Cerby: Failed to create save account modal - modal is null');
+      return;
+    }
+
+    console.log('Cerby: Modal created, isConnected:', modal.isConnected, 'modal element:', modal);
+
+    // Ensure modal is in the DOM
+    if (!modal.isConnected) {
+      if (document.body) {
+        console.log('Cerby: Appending modal to body');
+        document.body.appendChild(modal);
+      } else {
+        console.error('Cerby: document.body is not available');
+        return;
+      }
+    }
+
+    // Get current domain and email
+    const currentDomain = extractDomain(window.location.href);
+    const email = getEmailFromPage();
+    const accountName = extractAccountName(email);
+
+    // Set account name
+    if (modal._accountNameText) {
+      modal._accountNameText.textContent = accountName;
+    }
+    if (modal._accountNameInput) {
+      modal._accountNameInput.value = accountName;
+    }
+
+    // Set provider logo
+    if (modal._providerLogo && currentDomain) {
+      const logoUrl = getProviderLogoUrl(currentDomain);
+      modal._providerLogo.src = logoUrl;
+      modal._providerLogo.style.display = 'block';
+      modal._providerLogo.onerror = function() {
+        // Fallback to Google favicon
+        this.src = `https://www.google.com/s2/favicons?domain=${currentDomain}&sz=64`;
+        this.onerror = null;
+      };
+    }
+
+    // Position modal in upper right corner
+    positionModal();
+
+    // Show modal - add visible class and set display
+    console.log('Cerby: Showing modal');
+    
+    // First ensure modal is in DOM
+    if (!modal.isConnected) {
+      console.log('Cerby: Modal not connected, appending to body');
+      document.body.appendChild(modal);
+    }
+    
+    // Add visible class
+    modal.classList.add('cerby-save-account-modal--visible');
+    
+    // Set all visibility properties with !important - use setProperty for better compatibility
+    modal.style.setProperty('display', 'flex', 'important');
+    modal.style.setProperty('visibility', 'visible', 'important');
+    modal.style.setProperty('opacity', '1', 'important');
+    modal.style.setProperty('z-index', '2147483647', 'important');
+    
+    // Also ensure container is visible
+    const container = modal.querySelector('.cerby-save-account-modal__container');
+    if (container) {
+      container.style.setProperty('display', 'flex', 'important');
+      container.style.setProperty('visibility', 'visible', 'important');
+      container.style.setProperty('opacity', '1', 'important');
+      console.log('Cerby: Container styles set');
+    } else {
+      console.error('Cerby: Container not found in modal!');
+    }
+    
+    if (document.body) {
+      document.body.style.overflow = 'hidden';
+    }
+
+    // Force a reflow to ensure the modal is rendered
+    void modal.offsetHeight;
+    void container?.offsetHeight;
+
+    // Check if modal is actually in the DOM and visible
+    const modalInDOM = document.getElementById(SAVE_ACCOUNT_MODAL_ID);
+    const computedStyle = window.getComputedStyle(modal);
+    console.log('Cerby: Modal visibility check:', {
+      foundById: !!modalInDOM,
+      isConnected: modal.isConnected,
+      parentElement: modal.parentElement?.tagName,
+      display: computedStyle.display,
+      visibility: computedStyle.visibility,
+      opacity: computedStyle.opacity,
+      zIndex: computedStyle.zIndex,
+      width: computedStyle.width,
+      height: computedStyle.height,
+      top: computedStyle.top,
+      right: computedStyle.right
+    });
+    
+    // Double-check modal is visible
+    if (computedStyle.display === 'none') {
+      console.error('Cerby: Modal display is still none! Forcing display...');
+      modal.style.display = 'flex';
+      modal.style.visibility = 'visible';
+      modal.style.opacity = '1';
+    }
+
+    // Don't auto-focus, let user click edit button if needed
+  } catch (error) {
+    console.error('Cerby: Error in openSaveAccountModal:', error);
+    console.error(error.stack);
+  }
+}
+
+function closeSaveAccountModal() {
+  if (!saveAccountModal) return;
+
+  saveAccountModal.classList.remove('cerby-save-account-modal--visible');
+  saveAccountModal.style.display = 'none';
+  if (document.body) {
+    document.body.style.overflow = '';
+  }
+}
+
+function positionModal() {
+  if (!saveAccountModal) return;
+
+  // The modal wrapper is already positioned via CSS (flex with justify-content: flex-end)
+  // The container doesn't need fixed positioning since the parent handles it
+  const container = saveAccountModal.querySelector('.cerby-save-account-modal__container');
+  if (container) {
+    container.style.position = 'relative';
+    container.style.top = 'auto';
+    container.style.right = 'auto';
+    container.style.left = 'auto';
+    container.style.bottom = 'auto';
+    container.style.transform = 'none';
+  }
+}
+
+function handleSaveAccount() {
+  if (!saveAccountModal) return;
+
+  // Get account name from text or input (whichever is visible)
+  const accountNameText = saveAccountModal._accountNameText?.textContent || '';
+  const accountNameInput = saveAccountModal._accountNameInput?.value || '';
+  const accountName = accountNameInput || accountNameText || 'new_account';
+  
+  const vault = saveAccountModal.querySelector('.cerby-save-account-modal__vault-text')?.textContent || 'Personal Vault';
+  const email = getEmailFromPage();
+  const password = moduleElement?.querySelector(`#${MODULE_PASSWORD_TEXT_ID}`)?.dataset?.plainPassword || '';
+
+  // TODO: Send message to background script to save account
+  console.log('Save account:', { accountName, vault, email, password });
+
+  // Close modal
+  closeSaveAccountModal();
+}
+
+// Close modal on Escape key
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' && saveAccountModal && saveAccountModal.style.display !== 'none') {
+    closeSaveAccountModal();
+  }
+});
+
+
+function associateModuleWithInput(module, input, moduleType = 'email') {
+  const identifier = getOrAssignInlineId(input);
+  module.setAttribute('data-for-input', identifier);
+  module.dataset.forInput = identifier;
+  // Store direct reference to input on module for easy access
+  module._cerbyInput = input;
+  if (moduleType === 'password') {
+    input.dataset.cerbyInlinePasswordTouched = 'true';
+  } else {
+    input.dataset.cerbyInlineTouched = 'true';
+  }
+  attachInputListener(input);
+}
+
+function getOrAssignInlineId(element) {
+  if (element.dataset.cerbyInlineId) {
+    return element.dataset.cerbyInlineId;
+  }
+
+  const uniqueId = `cerby-inline-input-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  element.dataset.cerbyInlineId = uniqueId;
+  return uniqueId;
+}
+
+function handleSettingsClick(event) {
+  event.preventDefault();
+  event.stopPropagation();
+
+  if (chromeApi?.runtime?.sendMessage) {
+    chromeApi.runtime.sendMessage({ type: 'cerby-inline-open-settings' }, () => {
+      const lastError = chromeApi.runtime?.lastError;
+      if (lastError) {
+        // eslint-disable-next-line no-console
+        console.warn('Cerby inline settings dispatch failed:', lastError.message);
+      }
+    });
+  }
+}
+
+function handleEmailSuggestionClick(event) {
+  event.preventDefault();
+  event.stopPropagation();
+
+  // Get the input - try direct reference first, then currentInput, then module reference
+  let input = null;
+  
+  if (moduleElement && moduleElement._cerbyInput) {
+    input = moduleElement._cerbyInput;
+  } else if (currentInput) {
+    input = currentInput;
+  } else if (moduleElement) {
+    const inputId = moduleElement.getAttribute('data-for-input');
+    if (inputId) {
+      const allInputs = document.querySelectorAll('input');
+      for (const inp of allInputs) {
+        if (inp.dataset.cerbyInlineId === inputId) {
+          input = inp;
+          break;
+        }
+      }
+    }
+  }
+  
+  if (!input || !(input instanceof HTMLInputElement)) {
+    return;
+  }
+
+  // Focus first to ensure the input is active
+  input.focus();
+  
+  // Set the value using native setter to trigger React/Vue/etc listeners
+  try {
+    const descriptor = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+    if (descriptor && descriptor.set) {
+      descriptor.set.call(input, workspaceEmail);
+    } else {
+      input.value = workspaceEmail;
+    }
+  } catch (e) {
+    // Fallback to direct assignment
+    input.value = workspaceEmail;
+  }
+  
+  // Create and dispatch input event
+  const inputEvent = new Event('input', { bubbles: true, cancelable: true });
+  input.dispatchEvent(inputEvent);
+  
+  // Also dispatch change event
+  const changeEvent = new Event('change', { bubbles: true, cancelable: true });
+  input.dispatchEvent(changeEvent);
+  
+  // Set cursor position
+  if (input.setSelectionRange) {
+    try {
+      input.setSelectionRange(workspaceEmail.length, workspaceEmail.length);
+    } catch (e) {
+      // Ignore errors
+    }
+  }
+}
+
+function handleSaveClick(event) {
+  event.preventDefault();
+  event.stopPropagation();
+
+  const value = currentInput?.value?.trim() || '';
+  if (!value) {
+    return;
+  }
+
+  if (chromeApi?.runtime?.sendMessage) {
+    chromeApi.runtime.sendMessage(
+      { type: 'cerby-inline-save-account', email: value },
+      () => {
+        const lastError = chromeApi.runtime?.lastError;
+        if (lastError) {
+          // eslint-disable-next-line no-console
+          console.warn('Cerby inline save dispatch failed:', lastError.message);
+        }
+      }
+    );
+  }
+}
+
+function handleViewportChange() {
+  const moduleVisible = moduleElement && currentInput && moduleElement.classList.contains('cerby-inline-module--visible');
+  const dropdownVisible = inlineAccountDropdown && currentInput && inlineAccountDropdown.classList.contains('cerby-inline-account-dropdown--visible');
+  if (!moduleVisible && !dropdownVisible) return;
+  if (pendingViewportUpdate) return;
+  pendingViewportUpdate = true;
+  requestAnimationFrame(() => {
+    pendingViewportUpdate = false;
+    updateModulePosition();
+    if (dropdownVisible) updateInlineAccountDropdownPosition();
+  });
+}
+
+function updateModulePosition() {
+  if (!moduleElement || !currentInput) {
+    return;
+  }
+
+  const rect = currentInput.getBoundingClientRect();
+  if (!rect || rect.width === 0 && rect.height === 0) {
+    hideModule();
+    return;
+  }
+
+  const scrollX = window.scrollX || window.pageXOffset;
+  const scrollY = window.scrollY || window.pageYOffset;
+  const viewportWidth = document.documentElement?.clientWidth || window.innerWidth || 0;
+
+  const width = Math.min(rect.width, 360);
+  moduleElement.style.width = `${width}px`;
+
+  const viewportPadding = 8;
+  let left = rect.left + scrollX;
+  const rightEdge = scrollX + viewportWidth;
+
+  if (left + width > rightEdge - viewportPadding) {
+    left = Math.max(scrollX + viewportPadding, rightEdge - width - viewportPadding);
+  } else {
+    left = Math.max(scrollX + viewportPadding, left);
+  }
+
+  const top = rect.bottom + scrollY + MODULE_OFFSET;
+
+  moduleElement.style.top = `${top}px`;
+  moduleElement.style.left = `${left}px`;
+}
+
+// --- Inline Account Dropdown (login pages: pick account to fill email/password) ---
+const inlineProviderDomainMap = {
+  'Make': 'make.com', 'Mailchimp': 'mailchimp.com', 'Loom': 'loom.com', 'Pinterest': 'pinterest.com',
+  'OpenAI': 'openai.com', 'Apple': 'apple.com', 'Spotify': 'spotify.com', 'Bitso': 'bitso.com',
+  'Capital One': 'capitalone.com', 'Cursor': 'cursor.sh', 'Grammarly': 'grammarly.com', 'Google': 'google.com',
+  'Notion': 'notion.so', 'Figma': 'figma.com', 'Atlassian': 'atlassian.com', 'Dropbox': 'dropbox.com',
+  'Adobe': 'adobe.com', 'HubSpot': 'hubspot.com', 'Salesforce': 'salesforce.com'
+};
+
+function getDomainFromService(serviceName) {
+  if (!serviceName) return null;
+  if (inlineProviderDomainMap[serviceName]) return inlineProviderDomainMap[serviceName];
+  return (serviceName.toLowerCase().replace(/\s+/g, '') || 'unknown') + '.com';
+}
+
+async function tryShowInlineAccountDropdown(input, fieldType) {
+  if (!document.body || !chromeApi?.storage?.local) return;
+  /* Do not show the inline menu over the provider accounts modal (it's not a login form context) */
+  if (expandedAccountsModal) return;
+  const currentDomain = extractDomain(window.location.href);
+  if (!currentDomain) return;
+
+  const result = await chromeApi.storage.local.get(['accounts']);
+  const accounts = Array.isArray(result?.accounts) ? result.accounts : [];
+  const matching = accounts.filter(acc => {
+    const providerDomain = inlineProviderDomainMap[acc.service];
+    return providerDomain && currentDomain === providerDomain;
+  });
+  if (matching.length === 0) return;
+
+  hideInlineAccountDropdown();
+  const dropdown = createInlineAccountDropdown(matching, input, fieldType);
+  if (!dropdown) return;
+
+  document.body.appendChild(dropdown);
+  inlineAccountDropdown = dropdown;
+  dropdown._cerbyInput = input;
+  dropdown._fieldType = fieldType;
+  currentInput = input;
+
+  requestAnimationFrame(() => {
+    updateInlineAccountDropdownPosition();
+    dropdown.classList.add('cerby-inline-account-dropdown--visible');
+  });
+}
+
+function hideInlineAccountDropdown() {
+  if (inlineAccountDropdown) {
+    const input = inlineAccountDropdown._cerbyInput;
+    if (input && inlineAccountDropdown._cerbyInputFilterHandler) {
+      input.removeEventListener('input', inlineAccountDropdown._cerbyInputFilterHandler);
+    }
+    inlineAccountDropdown.remove();
+    inlineAccountDropdown = null;
+  }
+}
+
+function createInlineAccountDropdown(accounts, input, fieldType) {
+  const getUrl = (path) => (chromeApi?.runtime?.getURL ? chromeApi.runtime.getURL(path) : path);
+  const searchUrl = getUrl('assets/search-icon.svg');
+  const settingsUrl = getUrl('assets/inline-settings-icon.svg');
+  const openNewUrl = getUrl('assets/open-new-icon.svg');
+  const infoIconUrl = getUrl('assets/info-icon.svg');
+  const makeLogoUrl = 'https://cdn.brandfetch.io/idVHU5hl7_/theme/light/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1690469461407';
+
+  function escapeHtml(s) {
+    if (s == null) return '';
+    const div = document.createElement('div');
+    div.textContent = s;
+    return div.innerHTML;
+  }
+
+  const dropdown = document.createElement('div');
+  dropdown.id = INLINE_ACCOUNT_DROPDOWN_ID;
+  dropdown.className = 'cerby-inline-account-dropdown';
+  dropdown.setAttribute('role', 'listbox');
+  dropdown.setAttribute('aria-label', 'Cerby accounts');
+
+  const header = document.createElement('div');
+  header.className = 'cerby-inline-account-dropdown__header';
+  header.innerHTML = `
+    <button type="button" class="cerby-inline-account-dropdown__search-btn" aria-label="Search">
+      <img src="${escapeHtml(searchUrl)}" alt="" class="cerby-inline-account-dropdown__icon">
+    </button>
+    <div class="cerby-inline-account-dropdown__header-right">
+      <button type="button" class="cerby-inline-account-dropdown__settings-btn" aria-label="Settings">
+        <img src="${escapeHtml(settingsUrl)}" alt="" class="cerby-inline-account-dropdown__icon">
+      </button>
+      <button type="button" class="cerby-inline-account-dropdown__expand-btn" aria-label="Open in Cerby">
+        <img src="${escapeHtml(openNewUrl)}" alt="" class="cerby-inline-account-dropdown__icon">
+      </button>
+    </div>`;
+  dropdown.appendChild(header);
+
+  header.querySelector('.cerby-inline-account-dropdown__settings-btn')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (chromeApi?.runtime?.sendMessage) {
+      chromeApi.runtime.sendMessage({ type: 'cerby-inline-open-settings' });
+    }
+  });
+  const expandBtn = header.querySelector('.cerby-inline-account-dropdown__expand-btn');
+  expandBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const accounts = dropdown._cerbyAccounts || [];
+    const input = dropdown._cerbyInput;
+    const fieldType = dropdown._cerbyFieldType || 'email';
+    hideInlineAccountDropdown();
+    if (accounts.length && input) {
+      showExpandedAccountsModal(accounts, input, fieldType);
+    }
+  });
+
+  const list = document.createElement('div');
+  list.className = 'cerby-inline-account-dropdown__list';
+
+  function appendAccountItem(acc) {
+    const isMake = acc.service === 'Make';
+    const favicon = isMake ? makeLogoUrl : (acc.logoUrl || `https://icons.duckduckgo.com/ip3/${getDomainFromService(acc.service) || ''}.ico`);
+    const placeholderClass = isMake ? 'cerby-inline-account-dropdown__logo cerby-inline-account-dropdown__logo--make' : 'cerby-inline-account-dropdown__logo';
+
+    const item = document.createElement('div');
+    item.className = 'cerby-inline-account-dropdown__item';
+    item.setAttribute('role', 'option');
+    item.dataset.service = acc.service || '';
+    item.dataset.name = acc.name || '';
+    item.dataset.email = acc.email || '';
+    item.innerHTML = `
+      <div class="cerby-inline-account-dropdown__item-main">
+        <div class="${placeholderClass}">
+          <img src="${escapeHtml(favicon)}" alt="${escapeHtml(acc.service)}" class="cerby-inline-account-dropdown__app-logo" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
+          <span class="cerby-inline-account-dropdown__logo-fallback" style="display:none;">${(acc.service || '?').charAt(0)}</span>
+        </div>
+        <div class="cerby-inline-account-dropdown__item-info">
+          <span class="cerby-inline-account-dropdown__item-name">${escapeHtml(acc.name || '')}</span>
+          <span class="cerby-inline-account-dropdown__item-email">${escapeHtml(acc.email || acc.name || '')}</span>
+        </div>
+      </div>
+      <button type="button" class="cerby-inline-account-dropdown__item-info-btn" aria-label="Account details">
+        <img src="${escapeHtml(infoIconUrl)}" alt="" class="cerby-inline-account-dropdown__item-info-icon">
+      </button>`;
+
+    const mainArea = item.querySelector('.cerby-inline-account-dropdown__item-main');
+    const infoBtn = item.querySelector('.cerby-inline-account-dropdown__item-info-btn');
+
+    mainArea.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      handleInlineAccountSelect(acc, input, fieldType);
+      hideInlineAccountDropdown();
+    });
+    infoBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (chromeApi?.runtime?.sendMessage) {
+        chromeApi.runtime.sendMessage({ type: 'cerby-inline-open-panel' });
+      }
+    });
+
+    item.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        if (e.target === infoBtn) return;
+        handleInlineAccountSelect(acc, input, fieldType);
+        hideInlineAccountDropdown();
+      }
+    });
+    list.appendChild(item);
+  }
+
+  function filterAndRender(term) {
+    const lower = (term || '').toLowerCase().trim();
+    const toShow = lower
+      ? accounts.filter(acc =>
+          (acc.name || '').toLowerCase().includes(lower) ||
+          (acc.email || '').toLowerCase().includes(lower) ||
+          (acc.service || '').toLowerCase().includes(lower))
+      : accounts;
+
+    if (toShow.length === 0 && lower.length > 0) {
+      hideInlineAccountDropdown();
+      showModule(input, fieldType);
+      setModuleState('save');
+      moduleElement.dataset.cerbyFromLoginPage = '1';
+      return;
+    }
+
+    list.innerHTML = '';
+    toShow.forEach(appendAccountItem);
+  }
+
+  filterAndRender(input?.value?.trim() || '');
+
+  dropdown._cerbyAccounts = accounts;
+  dropdown._cerbyFieldType = fieldType;
+  dropdown._cerbyInputFilterHandler = () => {
+    if (!inlineAccountDropdown || inlineAccountDropdown !== dropdown) return;
+    filterAndRender(input?.value?.trim() || '');
+  };
+  input?.addEventListener('input', dropdown._cerbyInputFilterHandler);
+
+  dropdown.appendChild(list);
+
+  // Scroll-to-hide header: hide when scrolling down (browsing), show when scrolling up (searching)
+  const SCROLL_DOWN_THRESHOLD = 24;
+  const SCROLL_UP_THRESHOLD = 150; // ~3 cards: show header as soon as user scrolls up this much
+  let lastScrollTop = 0;
+  list.addEventListener('scroll', () => {
+    const st = list.scrollTop;
+    if (st > SCROLL_DOWN_THRESHOLD) {
+      dropdown.classList.add('cerby-inline-account-dropdown--header-hidden');
+      // Show header as soon as user scrolls up by ~3 cards, don't wait for top
+      if (lastScrollTop - st > SCROLL_UP_THRESHOLD) {
+        dropdown.classList.remove('cerby-inline-account-dropdown--header-hidden');
+      }
+    } else {
+      dropdown.classList.remove('cerby-inline-account-dropdown--header-hidden');
+    }
+    lastScrollTop = st;
+  });
+
+  return dropdown;
+}
+
+async function handleInlineAccountSelect(account, input, fieldType) {
+  if (!input || !(input instanceof HTMLInputElement)) return;
+
+  const value = fieldType === 'email' ? (account.email || account.name || '') : '';
+
+  if (fieldType === 'email') {
+    fillInputValue(input, value);
+    return;
+  }
+
+  if (fieldType === 'password') {
+    const service = account.service;
+    const email = account.email || account.name || '';
+    return new Promise(resolve => {
+      chromeApi.runtime.sendMessage(
+        { action: 'getAccountCredentials', service, email },
+        (response) => {
+          const creds = response || {};
+          const password = creds.password || '';
+          if (password) fillInputValue(input, password);
+          resolve();
+        }
+      );
+    });
+  }
+}
+
+function fillInputValue(input, value) {
+  input.focus();
+  try {
+    const descriptor = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+    if (descriptor && descriptor.set) {
+      descriptor.set.call(input, value);
+    } else {
+      input.value = value;
+    }
+  } catch (e) {
+    input.value = value;
+  }
+  const inputEvent = new Event('input', { bubbles: true, cancelable: true });
+  input.dispatchEvent(inputEvent);
+  const changeEvent = new Event('change', { bubbles: true, cancelable: true });
+  input.dispatchEvent(changeEvent);
+  if (input.setSelectionRange) {
+    try {
+      input.setSelectionRange(value.length, value.length);
+    } catch (e) {}
+  }
+}
+
+function updateInlineAccountDropdownPosition() {
+  if (!inlineAccountDropdown) return;
+  const input = currentInput || inlineAccountDropdown._cerbyInput;
+  if (!input) return;
+
+  const rect = input.getBoundingClientRect();
+  if (!rect || (rect.width === 0 && rect.height === 0)) {
+    hideInlineAccountDropdown();
+    return;
+  }
+
+  const scrollX = window.scrollX || window.pageXOffset;
+  const scrollY = window.scrollY || window.pageYOffset;
+  const viewportWidth = document.documentElement?.clientWidth || window.innerWidth || 0;
+  const width = 320;
+  const viewportPadding = 8;
+
+  let left = rect.left + scrollX;
+  if (left + width > scrollX + viewportWidth - viewportPadding) {
+    left = Math.max(scrollX + viewportPadding, scrollX + viewportWidth - width - viewportPadding);
+  }
+  left = Math.max(scrollX + viewportPadding, Math.min(left, scrollX + viewportWidth - width - viewportPadding));
+
+  const top = rect.bottom + scrollY + MODULE_OFFSET;
+
+  inlineAccountDropdown.style.top = `${top}px`;
+  inlineAccountDropdown.style.left = `${left}px`;
+  inlineAccountDropdown.style.width = `${width}px`;
+}
+
+function attachInputListener(input) {
+  if (detachInputListener) {
+    detachInputListener();
+    detachInputListener = null;
+  }
+
+  const handleInputChange = () => {
+    updateModuleStateForValue(input.value);
+  };
+
+  input.addEventListener('input', handleInputChange);
+  detachInputListener = () => {
+    input.removeEventListener('input', handleInputChange);
+    detachInputListener = null;
+  };
+
+  updateModuleStateForValue(input.value);
+}
+
+function updateModuleStateForValue(value) {
+  const trimmed = typeof value === 'string' ? value.trim() : '';
+  const moduleType = moduleElement?.dataset?.moduleType || 'email';
+  
+  if (moduleType === 'password') {
+    const passwordNode = moduleElement?.querySelector(`#${MODULE_PASSWORD_TEXT_ID}`);
+    const generatedPassword = passwordNode?.dataset?.plainPassword || '';
+    if (!trimmed || trimmed === generatedPassword) {
+      if (moduleElement.dataset.cerbyFromLoginPage === '1') {
+        delete moduleElement.dataset.cerbyFromLoginPage;
+        const inp = moduleElement._cerbyInput;
+        const modType = moduleElement.dataset.moduleType || 'email';
+        hideModule();
+        if (inp) tryShowInlineAccountDropdown(inp, modType);
+        return;
+      }
+      setModuleState('suggestion');
+    } else {
+      setModuleState('save');
+    }
+  } else {
+    // For email fields, check if value matches workspace email
+    const emailLower = workspaceEmail?.trim().toLowerCase() || '';
+    const valueLower = trimmed.toLowerCase();
+
+    if (!trimmed || valueLower === emailLower) {
+      if (moduleElement.dataset.cerbyFromLoginPage === '1') {
+        delete moduleElement.dataset.cerbyFromLoginPage;
+        const inp = moduleElement._cerbyInput;
+        const modType = moduleElement.dataset.moduleType || 'email';
+        hideModule();
+        if (inp) tryShowInlineAccountDropdown(inp, modType);
+        return;
+      }
+      setModuleState('suggestion');
+    } else {
+      setModuleState('save');
+    }
+  }
+}
+
+function setModuleState(state) {
+  if (!moduleElement) {
+    return;
+  }
+  const normalized = state === 'save' ? 'save' : 'suggestion';
+  moduleElement.dataset.state = normalized;
+}
+
+// Bad Credentials Warning Overlay
+const BAD_CREDENTIALS_OVERLAY_ID = 'cerby-bad-credentials-overlay';
+let badCredentialsOverlay = null;
+
+// Listen for messages from popup - set up early
+if (chromeApi?.runtime?.onMessage) {
+  chromeApi.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    console.log('Cerby: Received message:', message);
+    if (message.action === 'showBadCredentialsWarning') {
+      console.log('Cerby: Showing bad credentials warning for:', message.accountService);
+      showBadCredentialsWarning(message.accountService);
+      sendResponse({ success: true });
+    } else if (message.action === 'dismissBadCredentialsWarning') {
+      console.log('Cerby: Dismissing bad credentials warning');
+      hideBadCredentialsWarning();
+      sendResponse({ success: true });
+    } else if (message.action === 'fillAccountFromPanel') {
+      const { account, fieldType } = message;
+      if (account && currentInput) {
+        handleInlineAccountSelect(account, currentInput, fieldType || 'email');
+        hideInlineAccountDropdown();
+      }
+      sendResponse({ success: true });
+    }
+    return true; // Keep channel open for async response
+  });
+  console.log('Cerby: Bad credentials message listener initialized');
+}
+
+function showBadCredentialsWarning(accountService) {
+  console.log('Cerby: showBadCredentialsWarning called for:', accountService);
+  
+  if (badCredentialsOverlay) {
+    console.log('Cerby: Overlay already exists, returning');
+    return; // Already showing
+  }
+
+  // Ensure body exists
+  if (!document.body) {
+    console.log('Cerby: Body not ready, waiting...');
+    setTimeout(() => showBadCredentialsWarning(accountService), 100);
+    return;
+  }
+
+  // Create overlay
+  const overlay = document.createElement('div');
+  overlay.id = BAD_CREDENTIALS_OVERLAY_ID;
+  overlay.className = 'cerby-bad-credentials-overlay';
+  
+  const iconUrl = chromeApi.runtime.getURL('assets/bad-credentials-icon.svg');
+  console.log('Cerby: Icon URL:', iconUrl);
+  
+  overlay.innerHTML = `
+    <div class="cerby-bad-credentials-overlay-content">
+      <div class="cerby-bad-credentials-overlay-icon-container">
+        <div class="cerby-bad-credentials-overlay-spinner">
+          <div class="cerby-bad-credentials-overlay-icon-wrapper">
+            <img src="${iconUrl}" alt="Warning" class="cerby-bad-credentials-overlay-icon">
+          </div>
+        </div>
+      </div>
+      <div class="cerby-bad-credentials-overlay-body">
+        <div class="cerby-bad-credentials-overlay-text-section">
+          <h2 class="cerby-bad-credentials-overlay-heading">Review your account configuration</h2>
+          <div class="cerby-bad-credentials-overlay-description">
+            <p class="cerby-bad-credentials-overlay-text">
+              <span>We've detected multiple unsuccessful login attempts for this account because </span>
+              <strong>the login credentials are incorrect.</strong>
+              <br><br>
+              <span>Please update the credentials in Cerby to log in and prevent further failures.</span>
+            </p>
+            <p class="cerby-bad-credentials-overlay-last-login">
+              <strong>Last successful login:</strong> <span>2 days ago</span>
+            </p>
+          </div>
+        </div>
+        <div class="cerby-bad-credentials-overlay-actions">
+          <button class="cerby-bad-credentials-overlay-button cerby-bad-credentials-overlay-button-secondary" id="cerbyBadCredentialsTryAnyway">
+            Try anyway
+          </button>
+          <button class="cerby-bad-credentials-overlay-button cerby-bad-credentials-overlay-button-primary" id="cerbyBadCredentialsReview">
+            Review account
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(overlay);
+  badCredentialsOverlay = overlay;
+  console.log('Cerby: Bad credentials overlay added to page');
+  
+  // Add button handlers
+  const tryAnywayBtn = overlay.querySelector('#cerbyBadCredentialsTryAnyway');
+  const reviewBtn = overlay.querySelector('#cerbyBadCredentialsReview');
+  
+  if (tryAnywayBtn) {
+    tryAnywayBtn.addEventListener('click', () => {
+      showLoggingInState(overlay);
+    });
+  }
+  
+  if (reviewBtn) {
+    reviewBtn.addEventListener('click', () => {
+      hideBadCredentialsWarning();
+      // Open extension popup - this will need to be handled by the extension
+      if (chromeApi?.runtime?.sendMessage) {
+        chromeApi.runtime.sendMessage({ action: 'openAccountDetails', accountService });
+      }
+    });
+  }
+}
+
+function showLoggingInState(overlay) {
+  console.log('Cerby: Showing logging in state');
+  
+  const logoUrl = chromeApi.runtime.getURL('assets/cerby-logo-modal.svg');
+  const spinnerUrl = chromeApi.runtime.getURL('assets/spinner-base.svg');
+  
+  // Update overlay content to loading state
+  const content = overlay.querySelector('.cerby-bad-credentials-overlay-content');
+  if (!content) return;
+  
+  content.innerHTML = `
+    <div class="cerby-bad-credentials-overlay-icon-container">
+      <div class="cerby-bad-credentials-overlay-spinner">
+        <div class="cerby-bad-credentials-overlay-spinner-base">
+          <img src="${spinnerUrl}" alt="Spinner" />
+        </div>
+        <div class="cerby-bad-credentials-overlay-logo">
+          <img src="${logoUrl}" alt="Cerby" />
+        </div>
+      </div>
+    </div>
+    <div class="cerby-bad-credentials-overlay-body">
+      <div class="cerby-bad-credentials-overlay-text-section">
+        <h2 class="cerby-bad-credentials-overlay-heading">Logging you in...</h2>
+        <div class="cerby-bad-credentials-overlay-description">
+          <p class="cerby-bad-credentials-overlay-text">
+            We are launching your login...
+          </p>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  // Add loading class to overlay
+  overlay.classList.add('loading');
+  
+  // Remove overlay after 4 seconds
+  setTimeout(() => {
+    hideBadCredentialsWarning();
+  }, 4000);
+}
+
+function hideBadCredentialsWarning() {
+  if (badCredentialsOverlay) {
+    badCredentialsOverlay.remove();
+    badCredentialsOverlay = null;
+  }
+}
+
+// --- Expanded accounts modal (top-right, same style as login suggestion - opened from inline dropdown expand) ---
+const CERBY_EXPANDED_ACCOUNTS_MODAL_ID = 'cerby-expanded-accounts-modal';
+let expandedAccountsModal = null;
+
+function showExpandedAccountsModal(accounts, input, fieldType) {
+  if (!document.body || !accounts.length) return;
+  hideExpandedAccountsModal();
+  hideLoginSuggestionModal();
+
+  function escapeHtml(s) {
+    if (s == null) return '';
+    const div = document.createElement('div');
+    div.textContent = s;
+    return div.innerHTML;
+  }
+
+  const cerbyLogoUrl = chromeApi?.runtime?.getURL ? chromeApi.runtime.getURL('assets/cerby-logo-modal.svg') : '';
+  const ssoIconUrl = chromeApi?.runtime?.getURL ? chromeApi.runtime.getURL('assets/sso-icon.svg') : '';
+  const closeIconUrl = chromeApi?.runtime?.getURL ? chromeApi.runtime.getURL('assets/clear-icon.svg') : '';
+  const loginIconUrl = chromeApi?.runtime?.getURL ? chromeApi.runtime.getURL('assets/login-icon.svg') : '';
+  const makeLogoUrl = 'https://cdn.brandfetch.io/idVHU5hl7_/theme/light/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1690469461407';
+  const domainForFavicon = (service) => {
+    const d = getDomainFromService(service);
+    return d ? `https://icons.duckduckgo.com/ip3/${d}.ico` : '';
+  };
+
+  const provider = accounts[0]?.service || 'Accounts';
+  const cardsHtml = accounts.map((acc, i) => {
+    const isMake = acc.service === 'Make';
+    const favicon = isMake ? makeLogoUrl : (acc.logoUrl || domainForFavicon(acc.service));
+    const placeholderClass = isMake
+      ? 'cerby-login-suggestion-logo-placeholder cerby-login-suggestion-make-logo'
+      : 'cerby-login-suggestion-logo-placeholder';
+    const imgClass = isMake
+      ? 'cerby-login-suggestion-app-logo cerby-login-suggestion-app-logo-make'
+      : 'cerby-login-suggestion-app-logo';
+    const ssoChip = acc.hasSso
+      ? `<div class="cerby-login-suggestion-card-badge cerby-login-suggestion-sso"><img src="${ssoIconUrl}" alt="" class="cerby-login-suggestion-sso-icon"><span class="cerby-login-suggestion-sso-text">SSO</span></div>`
+      : '';
+    return `
+      <button type="button" class="cerby-login-suggestion-card" data-service="${escapeHtml(acc.service)}" data-name="${escapeHtml(acc.name || '')}" data-email="${escapeHtml(acc.email || '')}" data-index="${i}">
+        <div class="cerby-login-suggestion-card-logo">
+          <div class="${placeholderClass}">
+            <img src="${escapeHtml(favicon)}" alt="${escapeHtml(acc.service)}" class="${imgClass}" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
+            <span class="cerby-login-suggestion-logo-fallback" style="display:none;">${(acc.service || '?').charAt(0)}</span>
+          </div>
+        </div>
+        <div class="cerby-login-suggestion-card-info">
+          <p class="cerby-login-suggestion-name">${escapeHtml(acc.name || '')}</p>
+          <p class="cerby-login-suggestion-email">${escapeHtml(acc.email || '')}</p>
+        </div>
+        <div class="cerby-login-suggestion-card-right">
+          ${ssoChip}
+          <span class="cerby-login-suggestion-auto-login">
+            <img src="${loginIconUrl}" alt="" class="cerby-login-suggestion-login-icon">
+            <span class="cerby-login-suggestion-auto-login-text">Auto-login</span>
+          </span>
+        </div>
+      </button>`;
+  }).join('');
+
+  const searchIconUrl = chromeApi?.runtime?.getURL ? chromeApi.runtime.getURL('assets/search-icon.svg') : '';
+
+  const modal = document.createElement('div');
+  modal.id = CERBY_EXPANDED_ACCOUNTS_MODAL_ID;
+  modal.className = 'cerby-login-suggestion-modal cerby-expanded-accounts-modal';
+  modal.setAttribute('role', 'dialog');
+  modal.setAttribute('aria-label', provider + ' accounts');
+
+  modal.innerHTML = `
+    <div class="cerby-login-suggestion-modal-inner">
+      <div class="cerby-login-suggestion-header">
+        <div class="cerby-login-suggestion-header-left">
+          <img src="${cerbyLogoUrl}" alt="Cerby" class="cerby-login-suggestion-cerby-logo">
+          <h2 class="cerby-login-suggestion-heading">${escapeHtml(provider)} accounts</h2>
+        </div>
+        <button type="button" class="cerby-login-suggestion-close" id="cerbyExpandedAccountsClose" aria-label="Close">
+          <img src="${closeIconUrl}" alt="" class="cerby-login-suggestion-close-icon">
+        </button>
+      </div>
+      <div class="cerby-expanded-accounts-modal__search">
+        <img src="${searchIconUrl}" alt="" class="cerby-expanded-accounts-modal__search-icon" aria-hidden="true">
+        <input type="text" class="cerby-expanded-accounts-modal__search-input" placeholder="Search accounts" aria-label="Search accounts" autocomplete="off">
+      </div>
+      <div class="cerby-login-suggestion-list" id="cerbyExpandedAccountsList">
+        ${cardsHtml}
+      </div>
+    </div>`;
+
+  document.body.appendChild(modal);
+  expandedAccountsModal = modal;
+
+  requestAnimationFrame(() => {
+    if (expandedAccountsModal === modal) {
+      modal.classList.add('cerby-login-suggestion-modal-visible');
+    }
+  });
+
+  const listEl = modal.querySelector('#cerbyExpandedAccountsList');
+  const searchInput = modal.querySelector('.cerby-expanded-accounts-modal__search-input');
+  function filterExpandedAccounts() {
+    const term = (searchInput?.value || '').toLowerCase().trim();
+    modal.querySelectorAll('.cerby-login-suggestion-card').forEach((btn) => {
+      const name = (btn.dataset.name || '').toLowerCase();
+      const email = (btn.dataset.email || '').toLowerCase();
+      const service = (btn.dataset.service || '').toLowerCase();
+      const match = !term || name.includes(term) || email.includes(term) || service.includes(term);
+      btn.style.display = match ? '' : 'none';
+    });
+  }
+  searchInput?.addEventListener('input', filterExpandedAccounts);
+  searchInput?.addEventListener('keydown', (e) => e.stopPropagation());
+
+  modal.querySelector('#cerbyExpandedAccountsClose')?.addEventListener('click', () => hideExpandedAccountsModal());
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) hideExpandedAccountsModal();
+  });
+  modal.querySelectorAll('.cerby-login-suggestion-card').forEach((btn, i) => {
+    const acc = accounts[i];
+    if (!acc) return;
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      handleInlineAccountSelect(acc, input, fieldType);
+      hideExpandedAccountsModal();
+    });
+  });
+}
+
+function hideExpandedAccountsModal() {
+  if (expandedAccountsModal) {
+    expandedAccountsModal.remove();
+    expandedAccountsModal = null;
+  }
+}
+
+// --- Login Suggestion Modal (floating top-right, like Google "Sign in with Gmail") ---
+const CERBY_LOGIN_SUGGESTION_MODAL_ID = 'cerby-login-suggestion-modal';
+const providerDomainMap = {
+  'Make': 'make.com', 'Mailchimp': 'mailchimp.com', 'Loom': 'loom.com', 'Pinterest': 'pinterest.com',
+  'OpenAI': 'openai.com', 'Apple': 'apple.com', 'Spotify': 'spotify.com', 'Bitso': 'bitso.com',
+  'Capital One': 'capitalone.com', 'Cursor': 'cursor.sh', 'Grammarly': 'grammarly.com', 'Google': 'google.com',
+  'Notion': 'notion.so', 'Figma': 'figma.com', 'Atlassian': 'atlassian.com', 'Dropbox': 'dropbox.com',
+  'Adobe': 'adobe.com', 'HubSpot': 'hubspot.com', 'Salesforce': 'salesforce.com'
+};
+
+function extractDomainFromUrl(url) {
+  if (!url) return null;
+  try {
+    const u = new URL(url);
+    return u.hostname.replace(/^www\./, '').toLowerCase();
+  } catch (e) {
+    return null;
+  }
+}
+
+function getDomainFromServiceName(serviceName) {
+  if (!serviceName) return null;
+  if (providerDomainMap[serviceName]) return providerDomainMap[serviceName];
+  const n = serviceName.toLowerCase().replace(/\s+/g, '');
+  return n + '.com';
+}
+
+function isLoginPage() {
+  const path = (window.location.pathname || '').toLowerCase();
+  const search = (window.location.search || '').toLowerCase();
+  return /\/login|\/signin|\/sign-in|\/log-in|\/auth/.test(path) || search.includes('login') || search.includes('signin');
+}
+
+let loginSuggestionModal = null;
+
+async function tryShowLoginSuggestionModal() {
+  if (!document.body || !chromeApi?.storage?.local) return;
+  if (loginSuggestionModal) return;
+  if (!isLoginPage()) return;
+
+  const currentDomain = extractDomainFromUrl(window.location.href);
+  if (!currentDomain) return;
+
+  const result = await chromeApi.storage.local.get(['accounts']);
+  const accounts = Array.isArray(result?.accounts) ? result.accounts : [];
+  const matching = accounts.filter(acc => {
+    const providerDomain = providerDomainMap[acc.service];
+    return providerDomain && currentDomain === providerDomain;
+  });
+  if (matching.length === 0) return;
+
+  function escapeHtml(s) {
+    if (s == null) return '';
+    const div = document.createElement('div');
+    div.textContent = s;
+    return div.innerHTML;
+  }
+
+  const cerbyLogoUrl = chromeApi.runtime.getURL('assets/cerby-logo-modal.svg');
+  const ssoIconUrl = chromeApi.runtime.getURL('assets/sso-icon.svg');
+  const closeIconUrl = chromeApi.runtime.getURL('assets/clear-icon.svg');
+  const loginIconUrl = chromeApi.runtime.getURL('assets/login-icon.svg');
+  const makeLogoUrl = 'https://cdn.brandfetch.io/idVHU5hl7_/theme/light/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1690469461407';
+  const domainForFavicon = (service) => {
+    const d = getDomainFromServiceName(service);
+    return d ? `https://icons.duckduckgo.com/ip3/${d}.ico` : '';
+  };
+
+  const modal = document.createElement('div');
+  modal.id = CERBY_LOGIN_SUGGESTION_MODAL_ID;
+  modal.className = 'cerby-login-suggestion-modal';
+  modal.setAttribute('role', 'dialog');
+  modal.setAttribute('aria-label', 'Sign in with Cerby');
+
+  const cardsHtml = matching.map((acc, i) => {
+    const isMake = acc.service === 'Make';
+    const favicon = isMake ? makeLogoUrl : (acc.logoUrl || domainForFavicon(acc.service));
+    const placeholderClass = isMake
+      ? 'cerby-login-suggestion-logo-placeholder cerby-login-suggestion-make-logo'
+      : 'cerby-login-suggestion-logo-placeholder';
+    const imgClass = isMake
+      ? 'cerby-login-suggestion-app-logo cerby-login-suggestion-app-logo-make'
+      : 'cerby-login-suggestion-app-logo';
+    const ssoChip = acc.hasSso
+      ? `<div class="cerby-login-suggestion-card-badge cerby-login-suggestion-sso"><img src="${ssoIconUrl}" alt="" class="cerby-login-suggestion-sso-icon"><span class="cerby-login-suggestion-sso-text">SSO</span></div>`
+      : '';
+    return `
+      <button type="button" class="cerby-login-suggestion-card" data-service="${escapeHtml(acc.service)}" data-name="${escapeHtml(acc.name || '')}" data-email="${escapeHtml(acc.email || '')}" data-index="${i}">
+        <div class="cerby-login-suggestion-card-logo">
+          <div class="${placeholderClass}">
+            <img src="${escapeHtml(favicon)}" alt="${escapeHtml(acc.service)}" class="${imgClass}" data-domain="${escapeHtml(getDomainFromServiceName(acc.service) || '')}" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
+            <span class="cerby-login-suggestion-logo-fallback" style="display:none;">${(acc.service || '?').charAt(0)}</span>
+          </div>
+        </div>
+        <div class="cerby-login-suggestion-card-info">
+          <p class="cerby-login-suggestion-name">${escapeHtml(acc.name || '')}</p>
+          <p class="cerby-login-suggestion-email">${escapeHtml(acc.email || '')}</p>
+        </div>
+        <div class="cerby-login-suggestion-card-right">
+          ${ssoChip}
+          <span class="cerby-login-suggestion-auto-login">
+            <img src="${loginIconUrl}" alt="" class="cerby-login-suggestion-login-icon">
+            <span class="cerby-login-suggestion-auto-login-text">Auto-login</span>
+          </span>
+        </div>
+      </button>`;
+  }).join('');
+
+  modal.innerHTML = `
+    <div class="cerby-login-suggestion-modal-inner">
+      <div class="cerby-login-suggestion-header">
+        <div class="cerby-login-suggestion-header-left">
+          <img src="${cerbyLogoUrl}" alt="Cerby" class="cerby-login-suggestion-cerby-logo">
+          <h2 class="cerby-login-suggestion-heading">Sign in with Cerby</h2>
+        </div>
+        <button type="button" class="cerby-login-suggestion-close" id="cerbyLoginSuggestionClose" aria-label="Close">
+          <img src="${closeIconUrl}" alt="" class="cerby-login-suggestion-close-icon">
+        </button>
+      </div>
+      <div class="cerby-login-suggestion-list">
+        ${cardsHtml}
+      </div>
+    </div>`;
+
+  document.body.appendChild(modal);
+  loginSuggestionModal = modal;
+
+  setTimeout(() => {
+    if (loginSuggestionModal === modal) {
+      modal.classList.add('cerby-login-suggestion-modal-visible');
+    }
+  }, 500);
+
+  modal.querySelector('#cerbyLoginSuggestionClose')?.addEventListener('click', () => hideLoginSuggestionModal());
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) hideLoginSuggestionModal();
+  });
+  modal.querySelectorAll('.cerby-login-suggestion-card').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      hideLoginSuggestionModal();
+    });
+  });
+}
+
+function hideLoginSuggestionModal() {
+  if (loginSuggestionModal) {
+    loginSuggestionModal.remove();
+    loginSuggestionModal = null;
+  }
+}
+
