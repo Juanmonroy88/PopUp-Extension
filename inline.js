@@ -2325,16 +2325,17 @@ async function tryShowLoginSuggestionModal() {
       </button>`;
   }).join('');
 
-  const showSearch = matching.length > 4;
+  const SEARCH_BAR_MIN_ACCOUNTS = 5;
+  const showSearch = matching.length >= SEARCH_BAR_MIN_ACCOUNTS;
   const searchIconUrl = showSearch && chromeApi?.runtime?.getURL ? chromeApi.runtime.getURL('assets/search-icon.svg') : '';
   const searchBlockHtml = showSearch
-    ? `<div class="cerby-expanded-accounts-modal__search">
+    ? `<div class="cerby-login-suggestion-modal__search cerby-expanded-accounts-modal__search">
         <img src="${searchIconUrl}" alt="" class="cerby-expanded-accounts-modal__search-icon" aria-hidden="true">
         <input type="text" class="cerby-expanded-accounts-modal__search-input" placeholder="Search accounts" aria-label="Search accounts" autocomplete="off">
       </div>`
     : '';
 
-  if (showSearch) modal.className += ' cerby-login-suggestion-modal-with-search';
+  if (showSearch) modal.className = 'cerby-login-suggestion-modal cerby-login-suggestion-modal-with-search';
 
   modal.innerHTML = `
     <div class="cerby-login-suggestion-modal-inner">
