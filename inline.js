@@ -2325,6 +2325,18 @@ async function tryShowLoginSuggestionModal() {
       </button>`;
   }).join('');
 
+  const SEARCH_BAR_MIN_ACCOUNTS = 5;
+  const showSearch = matching.length >= SEARCH_BAR_MIN_ACCOUNTS;
+  const searchIconUrl = showSearch && chromeApi?.runtime?.getURL ? chromeApi.runtime.getURL('assets/search-icon.svg') : '';
+  const searchBlockHtml = showSearch
+    ? `<div class="cerby-login-suggestion-modal__search cerby-expanded-accounts-modal__search">
+        <img src="${searchIconUrl}" alt="" class="cerby-expanded-accounts-modal__search-icon" aria-hidden="true">
+        <input type="text" class="cerby-expanded-accounts-modal__search-input" placeholder="Search accounts" aria-label="Search accounts" autocomplete="off">
+      </div>`
+    : '';
+
+  if (showSearch) modal.className = 'cerby-login-suggestion-modal cerby-login-suggestion-modal-with-search';
+
   modal.innerHTML = `
     <div class="cerby-login-suggestion-modal-inner">
       <div class="cerby-login-suggestion-header">
@@ -2336,13 +2348,31 @@ async function tryShowLoginSuggestionModal() {
           <img src="${closeIconUrl}" alt="" class="cerby-login-suggestion-close-icon">
         </button>
       </div>
-      <div class="cerby-login-suggestion-list">
+      ${searchBlockHtml}
+      <div class="cerby-login-suggestion-list" id="cerbyLoginSuggestionList">
         ${cardsHtml}
       </div>
     </div>`;
 
   document.body.appendChild(modal);
   loginSuggestionModal = modal;
+
+  if (showSearch) {
+    const listEl = modal.querySelector('#cerbyLoginSuggestionList');
+    const searchInput = modal.querySelector('.cerby-expanded-accounts-modal__search-input');
+    function filterLoginSuggestionAccounts() {
+      const term = (searchInput?.value || '').toLowerCase().trim();
+      modal.querySelectorAll('.cerby-login-suggestion-card').forEach((btn) => {
+        const name = (btn.dataset.name || '').toLowerCase();
+        const email = (btn.dataset.email || '').toLowerCase();
+        const service = (btn.dataset.service || '').toLowerCase();
+        const match = !term || name.includes(term) || email.includes(term) || service.includes(term);
+        btn.style.display = match ? '' : 'none';
+      });
+    }
+    searchInput?.addEventListener('input', filterLoginSuggestionAccounts);
+    searchInput?.addEventListener('keydown', (e) => e.stopPropagation());
+  }
 
   setTimeout(() => {
     if (loginSuggestionModal === modal) {
