@@ -1,10 +1,7 @@
-// Inline extension content script for signup experiences
-console.log('Cerby: Inline script loaded');
+// Inline extension content script for login/signup experiences (Chrome only)
 
 const chromeApi = typeof chrome !== 'undefined' ? chrome :
   (typeof browser !== 'undefined' ? browser : null);
-
-console.log('Cerby: Chrome API available:', !!chromeApi);
 
 const SIGNUP_KEYWORDS = [
   'signup',
@@ -48,21 +45,9 @@ let moduleSaveButton = null;
 let saveAccountModal = null;
 let inlineAccountDropdown = null;
 
-console.log('Cerby: Initializing inline extension');
 initializeInlineExtension();
 
-// Debug: Expose test function to window for manual testing
-if (typeof window !== 'undefined') {
-  window.cerbyTestModal = function() {
-    console.log('Cerby: Manual test - opening modal');
-    const testPassword = 'TestPassword123!@#';
-    openSaveAccountModal(testPassword);
-  };
-  console.log('Cerby: Test function available - call window.cerbyTestModal() to test modal');
-}
-
 async function initializeInlineExtension() {
-  console.log('Cerby: initializeInlineExtension called');
   if (chromeApi?.storage?.onChanged) {
     chromeApi.storage.onChanged.addListener(handleStorageChanges);
   }
@@ -343,8 +328,6 @@ function highlightPasswordChars(password) {
 }
 
 function showModule(input, moduleType = 'email') {
-  console.log('Cerby: showModule called with type:', moduleType);
-  
   // Remove existing module if switching types
   if (moduleElement && moduleElement.dataset.moduleType !== moduleType) {
     if (moduleElement.isConnected) {
@@ -354,9 +337,7 @@ function showModule(input, moduleType = 'email') {
   }
 
   if (!moduleElement) {
-    console.log('Cerby: Creating new module element');
     moduleElement = createModuleElement(moduleType);
-    console.log('Cerby: Module element created, type:', moduleElement.dataset.moduleType);
   }
 
   if (!moduleElement.isConnected) {
@@ -406,7 +387,6 @@ function hideModule() {
 }
 
 function createModuleElement(moduleType = 'email') {
-  console.log('Cerby: createModuleElement called with type:', moduleType);
   const container = document.createElement('div');
   container.id = MODULE_ID;
   container.className = 'cerby-inline-module';
@@ -428,37 +408,21 @@ function createModuleElement(moduleType = 'email') {
   suggestion.style.userSelect = 'none';
   
   const handleSuggestionClick = function(e) {
-    console.log('Cerby: Suggestion area clicked, moduleType:', moduleType, 'target:', e.target.tagName, e.target.className);
-    // Only handle if not clicking on settings button
     if (!e.target.closest('.cerby-inline-module__settings-button')) {
       if (moduleType === 'password') {
-        console.log('Cerby: Calling handlePasswordSuggestionClick from suggestion');
         handlePasswordSuggestionClick(e);
       } else {
         handleEmailSuggestionClick(e);
       }
-    } else {
-      console.log('Cerby: Click was on settings button, ignoring');
     }
   };
   
   // Make the entire suggestion area clickable - handle clicks on any child element
   // Use both capture and bubble phases to ensure we catch all clicks
   const handleSuggestionAreaClick = function(e) {
-    console.log('Cerby: Click detected in suggestion area, moduleType:', moduleType, 'target:', e.target.tagName, e.target.className, 'currentTarget:', e.currentTarget.className);
-    
-    // Check if click is on settings button or its children - let it handle its own click
     const settingsButton = e.target.closest('.cerby-inline-module__settings-button');
-    if (settingsButton) {
-      console.log('Cerby: Click was on settings button, ignoring');
-      return; // Let settings button handle its own click
-    }
-    
-    // Handle click anywhere else in the suggestion area
-    console.log('Cerby: Processing click for', moduleType, 'module');
-    
+    if (settingsButton) return;
     if (moduleType === 'password') {
-      console.log('Cerby: Calling handlePasswordSuggestionClick from suggestion');
       handlePasswordSuggestionClick(e);
     } else {
       handleEmailSuggestionClick(e);
@@ -477,8 +441,6 @@ function createModuleElement(moduleType = 'email') {
   }
   
   suggestion.addEventListener('mousedown', function(e) {
-    console.log('Cerby: Suggestion mousedown detected, target:', e.target.tagName, e.target.className);
-    // Only track if not on settings button
     if (!e.target.closest('.cerby-inline-module__settings-button')) {
       const clickId = 'cerby_' + Date.now();
       window._cerbyClickState[clickId] = {
@@ -488,59 +450,30 @@ function createModuleElement(moduleType = 'email') {
         target: e.target
       };
       suggestion.dataset.cerbyClickId = clickId;
-      console.log('Cerby: Tracking mousedown for click action, clickId:', clickId);
     }
   }, true);
   
   // Listen on document for mouseup - this will catch it even if it happens outside
   const handleGlobalMouseUp = function(e) {
-    console.log('Cerby: Global mouseup detected, target:', e.target.tagName, e.target.className);
-    
-    // Check if mouseup is on settings button - be more specific
     const settingsButton = e.target.closest('.cerby-inline-module__settings-button');
-    if (settingsButton) {
-      console.log('Cerby: Mouseup on settings button, ignoring');
-      return;
-    }
-    
-    // Find all suggestions with pending clicks
+    if (settingsButton) return;
     const allSuggestions = document.querySelectorAll('.cerby-inline-module__suggestion[data-cerby-click-id]');
-    console.log('Cerby: Found', allSuggestions.length, 'suggestions with pending clicks');
-    
     for (const sugg of allSuggestions) {
       const clickId = sugg.dataset.cerbyClickId;
-      console.log('Cerby: Checking suggestion with clickId:', clickId);
       
       if (clickId && window._cerbyClickState[clickId]) {
         const state = window._cerbyClickState[clickId];
         const timeDiff = Date.now() - state.time;
         const isInSuggestion = sugg.contains(e.target);
-        
-        console.log('Cerby: Click state check:', {
-          clickId,
-          timeDiff,
-          isInSuggestion,
-          targetTag: e.target.tagName,
-          targetClass: e.target.className,
-          moduleType: state.moduleType
-        });
-        
         // If mousedown happened in suggestion and mouseup is within reasonable time,
         // trigger the action. Since mousedown was in suggestion, we trust that the user
         // intended to click it, even if mouseup happens slightly outside (due to drag or event capture)
         // But don't trigger if mouseup is on settings button or if time is too long
         if (timeDiff < 500 && !settingsButton) {
-          // For quick clicks (< 500ms), trigger if mousedown was in suggestion
-          // This handles cases where mouseup gets captured by other elements
-          console.log('Cerby: Valid click detected on suggestion, moduleType:', state.moduleType, 'isInSuggestion:', isInSuggestion, 'timeDiff:', timeDiff);
           e.preventDefault();
           e.stopPropagation();
-          
-          // Directly call the appropriate handler
           if (state.moduleType === 'password') {
-            console.log('Cerby: Calling handlePasswordSuggestionClick from global mouseup');
             setTimeout(() => {
-              console.log('Cerby: Executing handlePasswordSuggestionClick');
               try {
                 handlePasswordSuggestionClick(e);
               } catch (error) {
@@ -558,19 +491,8 @@ function createModuleElement(moduleType = 'email') {
           delete window._cerbyClickState[clickId];
           delete sugg.dataset.cerbyClickId;
           break;
-        } else {
-          console.log('Cerby: Click not valid:', {
-            isInSuggestion,
-            timeDiff,
-            timeValid: timeDiff < 500,
-            hasSettingsButton: !!settingsButton,
-            targetTag: e.target.tagName
-          });
         }
-        
         if (timeDiff >= 1000) {
-          // Clean up old clicks
-          console.log('Cerby: Cleaning up old click, timeDiff:', timeDiff);
           delete window._cerbyClickState[clickId];
           delete sugg.dataset.cerbyClickId;
         }
@@ -618,15 +540,12 @@ function createModuleElement(moduleType = 'email') {
   if (!window._cerbyGlobalMouseUpListener) {
     document.addEventListener('mouseup', handleGlobalMouseUp, true);
     window._cerbyGlobalMouseUpListener = true;
-    console.log('Cerby: Global mouseup listener attached');
   }
   
   // Add pointer events as well
   suggestion.addEventListener('pointerdown', function(e) {
-    console.log('Cerby: Suggestion pointerdown detected');
   });
   
-  console.log('Cerby: Suggestion area listeners attached for type:', moduleType, 'element:', suggestion);
 
   const label = document.createElement('p');
   label.className = 'cerby-inline-module__label';
@@ -646,7 +565,6 @@ function createModuleElement(moduleType = 'email') {
   suggestion.appendChild(row);
 
   if (moduleType === 'password') {
-    console.log('Cerby: Creating password module elements');
     const passwordContainer = document.createElement('div');
     passwordContainer.className = 'cerby-inline-module__password-container';
     passwordContainer.style.cursor = 'pointer';
@@ -664,15 +582,11 @@ function createModuleElement(moduleType = 'email') {
     // Only add keyboard support for accessibility
     passwordValue.addEventListener('keydown', function(e) {
       if (e.key === 'Enter' || e.key === ' ') {
-        console.log('Cerby: Password value keydown', e.key);
         e.preventDefault();
         e.stopPropagation();
         handlePasswordSuggestionClick(e);
       }
     });
-    
-    console.log('Cerby: Password value element created');
-    
     passwordContainer.appendChild(passwordValue);
     
     row.appendChild(passwordContainer);
@@ -729,12 +643,7 @@ function createModuleElement(moduleType = 'email') {
   saveContainer.appendChild(moduleSaveButton);
   container.appendChild(saveContainer);
 
-  // Allow keyboard focusing.
   container.tabIndex = -1;
-
-  // Debug: Log that module was created
-  console.log('Cerby: Module element created successfully, suggestion element:', suggestion, 'has click listeners:', suggestion.onclick !== null || suggestion.addEventListener !== undefined);
-
   return container;
 }
 
@@ -773,7 +682,6 @@ function handlePasswordSuggestionClick(event) {
   event.preventDefault();
   event.stopPropagation();
 
-  console.log('Cerby: Password suggestion clicked');
 
   let input = null;
   if (moduleElement && moduleElement._cerbyInput) {
@@ -807,7 +715,6 @@ function handlePasswordSuggestionClick(event) {
     return;
   }
 
-  console.log('Cerby: Filling password and opening modal');
 
   input.focus();
 
@@ -838,9 +745,7 @@ function handlePasswordSuggestionClick(event) {
 
   // Open the save account modal immediately (use input so modal is in same document/frame as form)
   try {
-    console.log('Cerby: Calling openSaveAccountModal with password:', password.substring(0, 5) + '...');
     openSaveAccountModal(password, input);
-    console.log('Cerby: openSaveAccountModal call completed');
   } catch (error) {
     console.error('Cerby: Error opening save account modal:', error);
     console.error(error.stack);
@@ -1286,10 +1191,8 @@ function createSaveAccountModal(targetDoc) {
   }
 
   try {
-    console.log('Cerby: Appending save account modal to', root === doc.body ? 'body' : 'documentElement');
     root.appendChild(modal);
     saveAccountModal = modal;
-    console.log('Cerby: Modal appended, in DOM:', root.contains(modal));
     return modal;
   } catch (error) {
     console.error('Cerby: Error appending modal:', error);
@@ -1300,7 +1203,6 @@ function createSaveAccountModal(targetDoc) {
 function openSaveAccountModal(password, sourceElement) {
   // Use the document where the content script runs so injected CSS applies to the modal
   const doc = document;
-  console.log('Cerby: openSaveAccountModal called, password length:', password?.length ?? 0);
   try {
     const modal = createSaveAccountModal(doc);
     if (!modal) {
@@ -1359,20 +1261,6 @@ function openSaveAccountModal(password, sourceElement) {
     // Check if modal is actually in the DOM and visible
     const modalInDOM = doc.getElementById(SAVE_ACCOUNT_MODAL_ID);
     const computedStyle = doc.defaultView ? doc.defaultView.getComputedStyle(modal) : window.getComputedStyle(modal);
-    console.log('Cerby: Modal visibility check:', {
-      foundById: !!modalInDOM,
-      isConnected: modal.isConnected,
-      parentElement: modal.parentElement?.tagName,
-      display: computedStyle.display,
-      visibility: computedStyle.visibility,
-      opacity: computedStyle.opacity,
-      zIndex: computedStyle.zIndex,
-      width: computedStyle.width,
-      height: computedStyle.height,
-      top: computedStyle.top,
-      right: computedStyle.right
-    });
-    
     // Double-check modal is visible
     if (computedStyle.display === 'none') {
       console.error('Cerby: Modal display is still none! Forcing display...');
@@ -1418,8 +1306,6 @@ function handleSaveAccount() {
   const url = saveAccountModal._urlInput?.value?.trim() || '';
 
   // TODO: Send message to background script to save account
-  console.log('Save account:', { accountName, vault, email, password, url });
-
   // Close modal
   closeSaveAccountModal();
 }
@@ -1577,7 +1463,6 @@ function handleSaveInCerbyClick(event) {
 
   event.preventDefault();
   event.stopPropagation();
-  console.log('Cerby: Save in Cerby clicked - opening save account modal');
 
   hideModule();
   hideInlineAccountDropdown();
@@ -2052,13 +1937,10 @@ let badCredentialsOverlay = null;
 // Listen for messages from popup - set up early
 if (chromeApi?.runtime?.onMessage) {
   chromeApi.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    console.log('Cerby: Received message:', message);
     if (message.action === 'showBadCredentialsWarning') {
-      console.log('Cerby: Showing bad credentials warning for:', message.accountService);
       showBadCredentialsWarning(message.accountService);
       sendResponse({ success: true });
     } else if (message.action === 'dismissBadCredentialsWarning') {
-      console.log('Cerby: Dismissing bad credentials warning');
       hideBadCredentialsWarning();
       sendResponse({ success: true });
     } else if (message.action === 'fillAccountFromPanel') {
@@ -2071,20 +1953,16 @@ if (chromeApi?.runtime?.onMessage) {
     }
     return true; // Keep channel open for async response
   });
-  console.log('Cerby: Bad credentials message listener initialized');
 }
 
 function showBadCredentialsWarning(accountService) {
-  console.log('Cerby: showBadCredentialsWarning called for:', accountService);
   
   if (badCredentialsOverlay) {
-    console.log('Cerby: Overlay already exists, returning');
     return; // Already showing
   }
 
   // Ensure body exists
   if (!document.body) {
-    console.log('Cerby: Body not ready, waiting...');
     setTimeout(() => showBadCredentialsWarning(accountService), 100);
     return;
   }
@@ -2095,7 +1973,6 @@ function showBadCredentialsWarning(accountService) {
   overlay.className = 'cerby-bad-credentials-overlay';
   
   const iconUrl = chromeApi.runtime.getURL('assets/bad-credentials-icon.svg');
-  console.log('Cerby: Icon URL:', iconUrl);
   
   overlay.innerHTML = `
     <div class="cerby-bad-credentials-overlay-content">
@@ -2135,7 +2012,6 @@ function showBadCredentialsWarning(accountService) {
   
   document.body.appendChild(overlay);
   badCredentialsOverlay = overlay;
-  console.log('Cerby: Bad credentials overlay added to page');
   
   // Add button handlers
   const tryAnywayBtn = overlay.querySelector('#cerbyBadCredentialsTryAnyway');
@@ -2159,7 +2035,6 @@ function showBadCredentialsWarning(accountService) {
 }
 
 function showLoggingInState(overlay) {
-  console.log('Cerby: Showing logging in state');
   
   const logoUrl = chromeApi.runtime.getURL('assets/cerby-logo-modal.svg');
   const spinnerUrl = chromeApi.runtime.getURL('assets/spinner-base.svg');

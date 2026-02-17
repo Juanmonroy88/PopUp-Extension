@@ -1,0 +1,3973 @@
+<!DOCTYPE html>
+<html lang="en" style="background: transparent; margin: 0; padding: 0;">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Password Manager</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body style="background: transparent !important; margin: 0; padding: 0;">
+  <!-- Simplified view when opened from inline dropdown expand -->
+  <div id="inlineExpandedView" class="inline-expanded-view" style="display: none;">
+    <div class="inline-expanded-header">
+      <button type="button" id="inlineExpandedBack" class="inline-expanded-back" aria-label="View all accounts">← All accounts</button>
+      <h2 id="inlineExpandedTitle" class="inline-expanded-title"></h2>
+    </div>
+    <div class="inline-expanded-search">
+      <div class="search-icon-wrapper">
+        <img src="assets/search-icon.svg" alt="" class="search-icon-img">
+      </div>
+      <input type="text" id="inlineExpandedSearchInput" class="inline-expanded-search-input" placeholder="Search accounts">
+    </div>
+    <div id="inlineExpandedList" class="inline-expanded-list"></div>
+  </div>
+
+  <div class="browser-extension" id="mainExtensionView">
+    <div class="container">
+      <div class="header-section">
+        <!-- Header -->
+        <div class="header">
+          <div class="header-left">
+            <div class="logo-container">
+              <img src="assets/cerby-logo-modal.svg" alt="Cerby Logo" class="logo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+              <div class="logo-fallback" style="display:none;">Cerby</div>
+            </div>
+            <div class="vault-card-wrapper">
+              <button class="vault-card" id="vaultSelectorButton" type="button" aria-label="Select vault" aria-expanded="false">
+                <div class="vault-card-text">
+                  <span class="vault-card-name">Contentzilla</span>
+                  <span class="vault-card-label" data-selected-vault>Workspace vault</span>
+                </div>
+                <span class="vault-card-chevron" aria-hidden="true">
+                  <img src="assets/chevron-down-icon.svg" alt="" class="vault-card-chevron-icon">
+                </span>
+              </button>
+              <div class="vault-dropdown" id="vaultDropdown" role="menu" aria-labelledby="vaultSelectorButton">
+                <button class="vault-dropdown-option selected" type="button" data-vault="workspace">
+                  <span class="vault-dropdown-option-label">Workspace vault</span>
+                  <span class="vault-dropdown-check" aria-hidden="true"></span>
+                </button>
+                <button class="vault-dropdown-option" type="button" data-vault="personal">
+                  <span class="vault-dropdown-option-label">Personal vault</span>
+                  <span class="vault-dropdown-check" aria-hidden="true"></span>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="header-actions">
+            <button class="icon-button" id="passwordGeneratorButton" aria-label="Password Generator">
+              <img src="assets/password-generator-icon.svg" alt="Password Generator" class="icon-img">
+            </button>
+            <button class="icon-button" id="settingsButton" aria-label="Settings">
+              <img src="assets/settings-icon.svg" alt="Settings" class="icon-img">
+            </button>
+            <div class="avatar" id="userAvatar">
+              <span class="avatar-initials">AB</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Search Section -->
+        <div class="search-section">
+          <button class="search-filter-button" aria-label="Search by collections">
+            <img src="assets/folders-icon.svg" alt="Collections" class="folders-icon-img">
+          </button>
+          <div class="search-input-container" id="searchContainer">
+            <div class="search-icon-wrapper">
+              <div class="search-icon-inner">
+                      <img src="assets/search-icon.svg" alt="Search" class="search-icon-img">
+              </div>
+            </div>
+            <input type="text" class="search-input" placeholder="Search item" id="searchInput">
+            <button class="search-clear-button" id="searchClearButton" aria-label="Clear search">
+              <div class="search-clear-icon-wrapper">
+                    <img src="assets/clear-icon.svg" alt="Clear" class="search-clear-icon-img">
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Filter Section -->
+        <div class="filter-section">
+          <div class="filter-content">
+            <button class="filter-dropdown" id="filterDropdown">
+              <span class="filter-text">All items</span>
+              <svg class="chevron-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M7 5L12 10L7 15" stroke="#1f2f4d" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+            <button class="sort-button" id="sortButton" aria-label="Sort">
+              <div class="sort-icon-container">
+                <img src="assets/sort-icon.svg" alt="Sort" class="sort-icon-img">
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Content Area -->
+      <div class="content-area" id="contentArea">
+        <!-- For this website section -->
+        <div class="section-header">
+          <p class="section-title">For this website:</p>
+        </div>
+
+        <!-- Account Card 1 - Make -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://cdn.brandfetch.io/idVHU5hl7_/theme/light/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1690469461407" alt="Make" class="app-logo make-logo" onerror="handleMakeLogoError(this)">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Make</p>
+              <p class="account-name">Creative Production</p>
+              <p class="account-email">creativeproduction@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button loom-warning-tooltip" aria-label="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+                <div class="custom-tooltip loom-warning-tooltip-content">
+                  <div class="custom-tooltip-content">
+                    <div class="custom-tooltip-icon">
+                      <img src="assets/bad-credentials-icon.svg" alt="Warning" class="warning-icon-img">
+                    </div>
+                    <p class="custom-tooltip-text">
+                      <span>This account's credentials might be incorrect, and could affect login. </span>
+                      <span class="custom-tooltip-text-bold">Please update the credentials in Cerby.</span>
+                    </p>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+            <div class="account-badge sso-badge">
+              <div class="sso-icon-container">
+                <div class="sso-icon-wrapper">
+                  <div class="sso-icon-inner">
+                      <img src="assets/sso-icon.svg" alt="" class="sso-icon">
+                  </div>
+                </div>
+              </div>
+              <span class="badge-text">SSO</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Account Card 2 - Make -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://cdn.brandfetch.io/idVHU5hl7_/theme/light/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1690469461407" alt="Make" class="app-logo make-logo" onerror="handleMakeLogoError(this)">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Make</p>
+              <p class="account-name">Content Strategy</p>
+              <p class="account-email">contentstrategy@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button loom-warning-tooltip" aria-label="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+                <div class="custom-tooltip loom-warning-tooltip-content">
+                  <div class="custom-tooltip-content">
+                    <div class="custom-tooltip-icon">
+                      <img src="assets/bad-credentials-icon.svg" alt="Warning" class="warning-icon-img">
+                    </div>
+                    <p class="custom-tooltip-text">
+                      <span>This account's credentials might be incorrect, and could affect login. </span>
+                      <span class="custom-tooltip-text-bold">Please update the credentials in Cerby.</span>
+                    </p>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Make Account 1 -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://cdn.brandfetch.io/idVHU5hl7_/theme/light/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1690469461407" alt="Make" class="app-logo make-logo" onerror="handleMakeLogoError(this)">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Make</p>
+              <p class="account-name">Automation Team</p>
+              <p class="account-email">automationteam@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Make Account 2 -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://cdn.brandfetch.io/idVHU5hl7_/theme/light/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1690469461407" alt="Make" class="app-logo make-logo" onerror="handleMakeLogoError(this)">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Make</p>
+              <p class="account-name">Integration Hub</p>
+              <p class="account-email">integrationhub@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Make Account 3 -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://cdn.brandfetch.io/idVHU5hl7_/theme/light/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1690469461407" alt="Make" class="app-logo make-logo" onerror="handleMakeLogoError(this)">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Make</p>
+              <p class="account-name">Workflow Dev</p>
+              <p class="account-email">workflowdev@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Make Account 4 -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://cdn.brandfetch.io/idVHU5hl7_/theme/light/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1690469461407" alt="Make" class="app-logo make-logo" onerror="handleMakeLogoError(this)">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Make</p>
+              <p class="account-name">Scenarios QA</p>
+              <p class="account-email">scenariosqa@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Make Account 5 -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://cdn.brandfetch.io/idVHU5hl7_/theme/light/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1690469461407" alt="Make" class="app-logo make-logo" onerror="handleMakeLogoError(this)">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Make</p>
+              <p class="account-name">Connections Lab</p>
+              <p class="account-email">connectionslab@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Make Account 6 -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://cdn.brandfetch.io/idVHU5hl7_/theme/light/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1690469461407" alt="Make" class="app-logo make-logo" onerror="handleMakeLogoError(this)">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Make</p>
+              <p class="account-name">Webhook Studio</p>
+              <p class="account-email">webhookstudio@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Make Account 7 -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://cdn.brandfetch.io/idVHU5hl7_/theme/light/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1690469461407" alt="Make" class="app-logo make-logo" onerror="handleMakeLogoError(this)">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Make</p>
+              <p class="account-name">Data Pipeline</p>
+              <p class="account-email">datapipeline@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Make Account 8 -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://cdn.brandfetch.io/idVHU5hl7_/theme/light/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1690469461407" alt="Make" class="app-logo make-logo" onerror="handleMakeLogoError(this)">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Make</p>
+              <p class="account-name">API Scenarios</p>
+              <p class="account-email">apiscenarios@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Make Account 9 -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://cdn.brandfetch.io/idVHU5hl7_/theme/light/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1690469461407" alt="Make" class="app-logo make-logo" onerror="handleMakeLogoError(this)">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Make</p>
+              <p class="account-name">Sync Workflows</p>
+              <p class="account-email">syncworkflows@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Make Account 10 -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://cdn.brandfetch.io/idVHU5hl7_/theme/light/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1690469461407" alt="Make" class="app-logo make-logo" onerror="handleMakeLogoError(this)">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Make</p>
+              <p class="account-name">Event Triggers</p>
+              <p class="account-email">eventtriggers@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Make Account 11 -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://cdn.brandfetch.io/idVHU5hl7_/theme/light/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1690469461407" alt="Make" class="app-logo make-logo" onerror="handleMakeLogoError(this)">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Make</p>
+              <p class="account-name">Multi-step Builder</p>
+              <p class="account-email">multistepbuilder@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Make Account 12 -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://cdn.brandfetch.io/idVHU5hl7_/theme/light/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1690469461407" alt="Make" class="app-logo make-logo" onerror="handleMakeLogoError(this)">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Make</p>
+              <p class="account-name">Conditional Flows</p>
+              <p class="account-email">conditionalflows@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Make Account 13 -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://cdn.brandfetch.io/idVHU5hl7_/theme/light/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1690469461407" alt="Make" class="app-logo make-logo" onerror="handleMakeLogoError(this)">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Make</p>
+              <p class="account-name">Error Handler</p>
+              <p class="account-email">errorhandler@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Make Account 14 -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://cdn.brandfetch.io/idVHU5hl7_/theme/light/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1690469461407" alt="Make" class="app-logo make-logo" onerror="handleMakeLogoError(this)">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Make</p>
+              <p class="account-name">Retry Logic</p>
+              <p class="account-email">retrylogic@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Make Account 15 -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://cdn.brandfetch.io/idVHU5hl7_/theme/light/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1690469461407" alt="Make" class="app-logo make-logo" onerror="handleMakeLogoError(this)">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Make</p>
+              <p class="account-name">Scheduler Tasks</p>
+              <p class="account-email">schedulertasks@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Make Account 16 -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://cdn.brandfetch.io/idVHU5hl7_/theme/light/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1690469461407" alt="Make" class="app-logo make-logo" onerror="handleMakeLogoError(this)">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Make</p>
+              <p class="account-name">Webhook Listener</p>
+              <p class="account-email">webhooklistener@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Make Account 17 -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://cdn.brandfetch.io/idVHU5hl7_/theme/light/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1690469461407" alt="Make" class="app-logo make-logo" onerror="handleMakeLogoError(this)">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Make</p>
+              <p class="account-name">Database Sync</p>
+              <p class="account-email">databasesync@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Make Account 18 -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://cdn.brandfetch.io/idVHU5hl7_/theme/light/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1690469461407" alt="Make" class="app-logo make-logo" onerror="handleMakeLogoError(this)">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Make</p>
+              <p class="account-name">CRM Integration</p>
+              <p class="account-email">crmintegration@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Make Account 19 -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://cdn.brandfetch.io/idVHU5hl7_/theme/light/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1690469461407" alt="Make" class="app-logo make-logo" onerror="handleMakeLogoError(this)">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Make</p>
+              <p class="account-name">Email Automation</p>
+              <p class="account-email">emailautomation@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Make Account 20 -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://cdn.brandfetch.io/idVHU5hl7_/theme/light/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1690469461407" alt="Make" class="app-logo make-logo" onerror="handleMakeLogoError(this)">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Make</p>
+              <p class="account-name">Slack Bot</p>
+              <p class="account-email">slackbot@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Make Account 21 -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://cdn.brandfetch.io/idVHU5hl7_/theme/light/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1690469461407" alt="Make" class="app-logo make-logo" onerror="handleMakeLogoError(this)">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Make</p>
+              <p class="account-name">Google Sheets</p>
+              <p class="account-email">googlesheets@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Make Account 22 -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://cdn.brandfetch.io/idVHU5hl7_/theme/light/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1690469461407" alt="Make" class="app-logo make-logo" onerror="handleMakeLogoError(this)">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Make</p>
+              <p class="account-name">Airtable Sync</p>
+              <p class="account-email">airtablesync@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Make Account 23 -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://cdn.brandfetch.io/idVHU5hl7_/theme/light/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1690469461407" alt="Make" class="app-logo make-logo" onerror="handleMakeLogoError(this)">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Make</p>
+              <p class="account-name">Zapier Migration</p>
+              <p class="account-email">zapiermigration@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Make Account 24 -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://cdn.brandfetch.io/idVHU5hl7_/theme/light/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1690469461407" alt="Make" class="app-logo make-logo" onerror="handleMakeLogoError(this)">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Make</p>
+              <p class="account-name">Custom Module</p>
+              <p class="account-email">custommodule@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Make Account 25 -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://cdn.brandfetch.io/idVHU5hl7_/theme/light/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1690469461407" alt="Make" class="app-logo make-logo" onerror="handleMakeLogoError(this)">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Make</p>
+              <p class="account-name">Enterprise Flow</p>
+              <p class="account-email">enterpriseflow@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+
+        <div class="section-header">
+          <p class="section-title">Other items:</p>
+        </div>
+
+        <!-- Account Card 3 - Mailchimp -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/mailchimp.com.ico" alt="Mailchimp" class="app-logo" data-domain="mailchimp.com">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Mailchimp</p>
+              <p class="account-name">Marketing Operations</p>
+              <p class="account-email">marketingops@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button loom-warning-tooltip" aria-label="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+                <div class="custom-tooltip loom-warning-tooltip-content">
+                  <div class="custom-tooltip-content">
+                    <div class="custom-tooltip-icon">
+                      <img src="assets/bad-credentials-icon.svg" alt="Warning" class="warning-icon-img">
+                    </div>
+                    <p class="custom-tooltip-text">
+                      <span>This account's credentials might be incorrect, and could affect login. </span>
+                      <span class="custom-tooltip-text-bold">Please update the credentials in Cerby.</span>
+                    </p>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+            <div class="account-badge sso-badge">
+              <div class="sso-icon-container">
+                <div class="sso-icon-wrapper">
+                  <div class="sso-icon-inner">
+                      <img src="assets/sso-icon.svg" alt="" class="sso-icon">
+                  </div>
+                </div>
+              </div>
+              <span class="badge-text">SSO</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Secret Card - Production API Token -->
+        <div class="account-card" data-secret="prod-api-token-58f9b2a4" data-secret-note="Primary token for production API gateway rotation scheduled every quarter. Keep stored in vault and follow handoff procedure for rotation." data-attachments='[{"name":"api-gateway-rotation.pdf","type":"pdf"},{"name":"gateway-keys.pem","type":"pem"},{"name":"runbook.md","type":"md"}]'>
+          <div class="account-logo secret-logo">
+            <div class="secret-icon-container">
+              <div class="secret-icon-wrapper">
+                <div class="secret-icon-rotated">
+                  <img src="assets/secret-icon.svg" alt="Secret" class="secret-icon-img">
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Secret</p>
+              <p class="account-name">Production API Token</p>
+            </div>
+            <div class="attachment-icon" aria-label="3 attachments: PDF, PEM, MD">
+              <div class="attachment-icon-inner">
+                <div class="attachment-icon-wrapper">
+                  <img src="assets/attachment-icon.svg" alt="Attachment" class="attachment-icon-img">
+                </div>
+              </div>
+            </div>
+            <div class="account-actions secret-actions">
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Account Card 4 - Loom with MFA -->
+        <div class="account-card">
+          <div class="account-logo account-logo-alert">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/loom.com.ico" alt="Loom" class="app-logo" data-domain="loom.com">
+              </div>
+            </div>
+            <div class="account-logo-alert-icon">
+              <img src="assets/warning-icon.svg" alt="Alert" class="alert-icon-img">
+              <div class="custom-tooltip account-logo-alert-tooltip">
+                <div class="custom-tooltip-content">
+                  <p class="custom-tooltip-text">This account was flagged with bad credentials.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Loom</p>
+              <p class="account-name">Video Production</p>
+              <p class="account-email">videoproduction@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button loom-warning-tooltip" aria-label="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+                <div class="custom-tooltip loom-warning-tooltip-content">
+                  <div class="custom-tooltip-content">
+                    <div class="custom-tooltip-icon">
+                      <img src="assets/bad-credentials-icon.svg" alt="Warning" class="warning-icon-img">
+                    </div>
+                    <p class="custom-tooltip-text">
+                      <span>This account's credentials might be incorrect, and could affect login. </span>
+                      <span class="custom-tooltip-text-bold">Please update the credentials in Cerby.</span>
+                    </p>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+            <div class="account-badge mfa-badge">
+              <div class="mfa-icon-container">
+                <div class="mfa-icon-inner">
+                    <img src="assets/mfa-icon.svg" alt="" class="mfa-icon">
+                </div>
+              </div>
+              <span class="badge-text">MFA</span>
+            </div>
+            <div class="account-badge bad-credentials-badge">
+              <div class="bad-credentials-icon-container">
+                <div class="bad-credentials-icon-inner">
+                  <img src="assets/bad-credentials-icon.svg" alt="" class="bad-credentials-icon">
+                </div>
+              </div>
+              <span class="badge-text">Bad credentials</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loom Account 1 -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/loom.com.ico" alt="Loom" class="app-logo" data-domain="loom.com">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Loom</p>
+              <p class="account-name">Training Videos</p>
+              <p class="account-email">trainingvideos@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loom Account 2 -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/loom.com.ico" alt="Loom" class="app-logo" data-domain="loom.com">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Loom</p>
+              <p class="account-name">Onboarding Series</p>
+              <p class="account-email">onboardingseries@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loom Account 3 -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/loom.com.ico" alt="Loom" class="app-logo" data-domain="loom.com">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Loom</p>
+              <p class="account-name">Sales Demos</p>
+              <p class="account-email">salesdemos@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loom Account 4 -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/loom.com.ico" alt="Loom" class="app-logo" data-domain="loom.com">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Loom</p>
+              <p class="account-name">Product Tutorials</p>
+              <p class="account-email">producttutorials@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loom Account 5 -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/loom.com.ico" alt="Loom" class="app-logo" data-domain="loom.com">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Loom</p>
+              <p class="account-name">Support Library</p>
+              <p class="account-email">supportlibrary@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loom Account 6 -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/loom.com.ico" alt="Loom" class="app-logo" data-domain="loom.com">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Loom</p>
+              <p class="account-name">Internal Comms</p>
+              <p class="account-email">internalcomms@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loom Account 7 -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/loom.com.ico" alt="Loom" class="app-logo" data-domain="loom.com">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Loom</p>
+              <p class="account-name">Customer Success</p>
+              <p class="account-email">customersuccess@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loom Account 8 -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/loom.com.ico" alt="Loom" class="app-logo" data-domain="loom.com">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Loom</p>
+              <p class="account-name">Engineering Updates</p>
+              <p class="account-email">engineeringupdates@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loom Account 9 -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/loom.com.ico" alt="Loom" class="app-logo" data-domain="loom.com">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Loom</p>
+              <p class="account-name">Design Reviews</p>
+              <p class="account-email">designreviews@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loom Account 10 -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/loom.com.ico" alt="Loom" class="app-logo" data-domain="loom.com">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Loom</p>
+              <p class="account-name">Sprint Recap</p>
+              <p class="account-email">sprintrecap@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loom Account 11 -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/loom.com.ico" alt="Loom" class="app-logo" data-domain="loom.com">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Loom</p>
+              <p class="account-name">All Hands</p>
+              <p class="account-email">allhands@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loom Account 12 -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/loom.com.ico" alt="Loom" class="app-logo" data-domain="loom.com">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Loom</p>
+              <p class="account-name">Team Standup</p>
+              <p class="account-email">teamstandup@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loom Account 13 -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/loom.com.ico" alt="Loom" class="app-logo" data-domain="loom.com">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Loom</p>
+              <p class="account-name">Webinar Replay</p>
+              <p class="account-email">webinarreplay@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loom Account 14 -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/loom.com.ico" alt="Loom" class="app-logo" data-domain="loom.com">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Loom</p>
+              <p class="account-name">Conference Talk</p>
+              <p class="account-email">conferencetalk@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loom Account 15 -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/loom.com.ico" alt="Loom" class="app-logo" data-domain="loom.com">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Loom</p>
+              <p class="account-name">Interview Prep</p>
+              <p class="account-email">interviewprep@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loom Account 16 -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/loom.com.ico" alt="Loom" class="app-logo" data-domain="loom.com">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Loom</p>
+              <p class="account-name">Pitch Deck</p>
+              <p class="account-email">pitchdeck@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loom Account 17 -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/loom.com.ico" alt="Loom" class="app-logo" data-domain="loom.com">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Loom</p>
+              <p class="account-name">Case Study</p>
+              <p class="account-email">casestudy@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loom Account 18 -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/loom.com.ico" alt="Loom" class="app-logo" data-domain="loom.com">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Loom</p>
+              <p class="account-name">Feature Walkthrough</p>
+              <p class="account-email">featurewalkthrough@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loom Account 19 -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/loom.com.ico" alt="Loom" class="app-logo" data-domain="loom.com">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Loom</p>
+              <p class="account-name">Bug Report</p>
+              <p class="account-email">bugreport@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loom Account 20 -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/loom.com.ico" alt="Loom" class="app-logo" data-domain="loom.com">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Loom</p>
+              <p class="account-name">Release Notes</p>
+              <p class="account-email">releasenotes@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loom Account 21 -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/loom.com.ico" alt="Loom" class="app-logo" data-domain="loom.com">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Loom</p>
+              <p class="account-name">Documentation</p>
+              <p class="account-email">documentation@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loom Account 22 -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/loom.com.ico" alt="Loom" class="app-logo" data-domain="loom.com">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Loom</p>
+              <p class="account-name">How-To Guides</p>
+              <p class="account-email">howtoguides@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loom Account 23 -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/loom.com.ico" alt="Loom" class="app-logo" data-domain="loom.com">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Loom</p>
+              <p class="account-name">Knowledge Base</p>
+              <p class="account-email">knowledgebase@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loom Account 24 -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/loom.com.ico" alt="Loom" class="app-logo" data-domain="loom.com">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Loom</p>
+              <p class="account-name">FAQ Videos</p>
+              <p class="account-email">faqvideos@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loom Account 25 -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/loom.com.ico" alt="Loom" class="app-logo" data-domain="loom.com">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Loom</p>
+              <p class="account-name">Feedback Collection</p>
+              <p class="account-email">feedbackcollection@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loom Account 26 -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/loom.com.ico" alt="Loom" class="app-logo" data-domain="loom.com">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Loom</p>
+              <p class="account-name">User Research</p>
+              <p class="account-email">userresearch@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loom Account 27 -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/loom.com.ico" alt="Loom" class="app-logo" data-domain="loom.com">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Loom</p>
+              <p class="account-name">UX Testing</p>
+              <p class="account-email">uxtesting@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loom Account 28 -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/loom.com.ico" alt="Loom" class="app-logo" data-domain="loom.com">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Loom</p>
+              <p class="account-name">Beta Launch</p>
+              <p class="account-email">betalaunch@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loom Account 29 -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/loom.com.ico" alt="Loom" class="app-logo" data-domain="loom.com">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Loom</p>
+              <p class="account-name">Marketing Campaign</p>
+              <p class="account-email">marketingcampaign@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loom Account 30 -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/loom.com.ico" alt="Loom" class="app-logo" data-domain="loom.com">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Loom</p>
+              <p class="account-name">Social Content</p>
+              <p class="account-email">socialcontent@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+
+                <!-- Account Card 5 - Pinterest -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/pinterest.com.ico" alt="Pinterest" class="app-logo" data-domain="pinterest.com">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Pinterest</p>
+              <p class="account-name">Social Media Management</p>
+              <p class="account-email">socialmedia@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+            <div class="account-badge mfa-badge">
+              <div class="mfa-icon-container">
+                <div class="mfa-icon-inner">
+                    <img src="assets/mfa-icon.svg" alt="" class="mfa-icon">
+                </div>
+              </div>
+              <span class="badge-text">MFA</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Account Card 6 - OpenAI -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/openai.com.ico" alt="OpenAI" class="app-logo" data-domain="openai.com">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">OpenAI</p>
+              <p class="account-name">AI Research & Development</p>
+              <p class="account-email">airesearch@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+            <div class="account-badge mfa-badge">
+              <div class="mfa-icon-container">
+                <div class="mfa-icon-inner">
+                    <img src="assets/mfa-icon.svg" alt="" class="mfa-icon">
+                </div>
+              </div>
+              <span class="badge-text">MFA</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Secret Card - Vault Root Credential Envelope -->
+        <div class="account-card" data-secret="vault-root-credential-92fae6" data-secret-note="Emergency sealed envelope for vault root credential. Requires dual control approval from leadership." data-attachments='[{"name":"vault-unseal-steps.txt","type":"txt"},{"name":"emergency-procedures.docx","type":"docx"}]'>
+          <div class="account-logo secret-logo">
+            <div class="secret-icon-container">
+              <div class="secret-icon-wrapper">
+                <div class="secret-icon-rotated">
+                  <img src="assets/secret-icon.svg" alt="Secret" class="secret-icon-img">
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Secret</p>
+              <p class="account-name">Vault Root Credential Envelope</p>
+            </div>
+            <div class="attachment-icon" aria-label="2 attachments: TXT, DOCX">
+              <div class="attachment-icon-inner">
+                <div class="attachment-icon-wrapper">
+                  <img src="assets/attachment-icon.svg" alt="Attachment" class="attachment-icon-img">
+                </div>
+              </div>
+            </div>
+            <div class="account-actions secret-actions">
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Account Card 7 - Apple -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/apple.com.ico" alt="Apple" class="app-logo" data-domain="apple.com">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Apple</p>
+              <p class="account-name">Client Relations</p>
+              <p class="account-email">clientrelations@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Account Card 8 - Spotify -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/spotify.com.ico" alt="Spotify" class="app-logo" data-domain="spotify.com">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Spotify</p>
+              <p class="account-name">Audio Production</p>
+              <p class="account-email">audioproduction@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+            <div class="account-badge mfa-badge">
+              <div class="mfa-icon-container">
+                <div class="mfa-icon-inner">
+                    <img src="assets/mfa-icon.svg" alt="" class="mfa-icon">
+                </div>
+              </div>
+              <span class="badge-text">MFA</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Secret Card - Stripe Signing Secret -->
+        <div class="account-card" data-secret="stripe-signing-secret-cc92e1" data-secret-note="Signing secret for Stripe webhooks verifying payment notifications." data-attachments='[]'>
+          <div class="account-logo secret-logo">
+            <div class="secret-icon-container">
+              <div class="secret-icon-wrapper">
+                <div class="secret-icon-rotated">
+                  <img src="assets/secret-icon.svg" alt="Secret" class="secret-icon-img">
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Secret</p>
+              <p class="account-name">Stripe Signing Secret</p>
+            </div>
+            <div class="account-actions secret-actions">
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Account Card 9 - Bitso -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/bitso.com.ico" alt="Bitso" class="app-logo" data-domain="bitso.com">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Bitso</p>
+              <p class="account-name">Financial Operations</p>
+              <p class="account-email">financialops@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Account Card 10 - Capital One -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/capitalone.com.ico" alt="Capital One" class="app-logo" data-domain="capitalone.com">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Capital One</p>
+              <p class="account-name">Business Finance</p>
+              <p class="account-email">businessfinance@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+            <div class="account-badge mfa-badge">
+              <div class="mfa-icon-container">
+                <div class="mfa-icon-inner">
+                    <img src="assets/mfa-icon.svg" alt="" class="mfa-icon">
+                </div>
+              </div>
+              <span class="badge-text">MFA</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Account Card 11 - Cursor -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/cursor.sh.ico" alt="Cursor" class="app-logo" data-domain="cursor.sh">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Cursor</p>
+              <p class="account-name">Development Tools</p>
+              <p class="account-email">developmenttools@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Account Card 12 - Grammarly -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/grammarly.com.ico" alt="Grammarly" class="app-logo" data-domain="grammarly.com">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Grammarly</p>
+              <p class="account-name">Content Quality Assurance</p>
+              <p class="account-email">contentqa@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+            <div class="account-badge mfa-badge">
+              <div class="mfa-icon-container">
+                <div class="mfa-icon-inner">
+                    <img src="assets/mfa-icon.svg" alt="" class="mfa-icon">
+                </div>
+              </div>
+              <span class="badge-text">MFA</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Account Card 13 - Notion -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/notion.so.ico" alt="Notion" class="app-logo" data-domain="notion.so">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Notion</p>
+              <p class="account-name">Project Management</p>
+              <p class="account-email">projectmanagement@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+            <div class="account-badge mfa-badge">
+              <div class="mfa-icon-container">
+                <div class="mfa-icon-inner">
+                    <img src="assets/mfa-icon.svg" alt="" class="mfa-icon">
+                </div>
+              </div>
+              <span class="badge-text">MFA</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Account Card 14 - Figma -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/figma.com.ico" alt="Figma" class="app-logo" data-domain="figma.com">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Figma</p>
+              <p class="account-name">Design Systems</p>
+              <p class="account-email">designsystems@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Account Card 15 - Pinterest -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/pinterest.com.ico" alt="Pinterest" class="app-logo" data-domain="pinterest.com">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Pinterest</p>
+              <p class="account-name">Visual Content Strategy</p>
+              <p class="account-email">visualcontent@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Account Card 16 - OpenAI -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/openai.com.ico" alt="OpenAI" class="app-logo" data-domain="openai.com">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">OpenAI</p>
+              <p class="account-name">Content Generation</p>
+              <p class="account-email">contentgeneration@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+            <div class="account-badge mfa-badge">
+              <div class="mfa-icon-container">
+                <div class="mfa-icon-inner">
+                    <img src="assets/mfa-icon.svg" alt="" class="mfa-icon">
+                </div>
+              </div>
+              <span class="badge-text">MFA</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Account Card 17 - Apple -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/apple.com.ico" alt="Apple" class="app-logo" data-domain="apple.com">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Apple</p>
+              <p class="account-name">Account Management</p>
+              <p class="account-email">accountmanagement@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+            <div class="account-badge mfa-badge">
+              <div class="mfa-icon-container">
+                <div class="mfa-icon-inner">
+                    <img src="assets/mfa-icon.svg" alt="" class="mfa-icon">
+                </div>
+              </div>
+              <span class="badge-text">MFA</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Account Card 18 - Spotify -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/spotify.com.ico" alt="Spotify" class="app-logo" data-domain="spotify.com">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Spotify</p>
+              <p class="account-name">Music Licensing</p>
+              <p class="account-email">musiclicensing@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Account Card 19 - Bitso -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/bitso.com.ico" alt="Bitso" class="app-logo" data-domain="bitso.com">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Bitso</p>
+              <p class="account-name">Payment Processing</p>
+              <p class="account-email">paymentprocessing@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+            <div class="account-badge mfa-badge">
+              <div class="mfa-icon-container">
+                <div class="mfa-icon-inner">
+                    <img src="assets/mfa-icon.svg" alt="" class="mfa-icon">
+                </div>
+              </div>
+              <span class="badge-text">MFA</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Account Card 20 - Capital One -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/capitalone.com.ico" alt="Capital One" class="app-logo" data-domain="capitalone.com">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Capital One</p>
+              <p class="account-name">Corporate Banking</p>
+              <p class="account-email">corporatebanking@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Account Card 21 - Cursor -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/cursor.sh.ico" alt="Cursor" class="app-logo" data-domain="cursor.sh">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Cursor</p>
+              <p class="account-name">Technical Development</p>
+              <p class="account-email">technicaldev@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Account Card 22 - Grammarly -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/grammarly.com.ico" alt="Grammarly" class="app-logo" data-domain="grammarly.com">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Grammarly</p>
+              <p class="account-name">Editorial Services</p>
+              <p class="account-email">editorialservices@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+            <div class="account-badge mfa-badge">
+              <div class="mfa-icon-container">
+                <div class="mfa-icon-inner">
+                    <img src="assets/mfa-icon.svg" alt="" class="mfa-icon">
+                </div>
+              </div>
+              <span class="badge-text">MFA</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Account Card 23 - Notion -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/notion.so.ico" alt="Notion" class="app-logo" data-domain="notion.so">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Notion</p>
+              <p class="account-name">Team Collaboration</p>
+              <p class="account-email">teamcollaboration@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Account Card 24 - Figma -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/figma.com.ico" alt="Figma" class="app-logo" data-domain="figma.com">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Figma</p>
+              <p class="account-name">UI/UX Design</p>
+              <p class="account-email">uidesign@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+            <div class="account-badge mfa-badge">
+              <div class="mfa-icon-container">
+                <div class="mfa-icon-inner">
+                    <img src="assets/mfa-icon.svg" alt="" class="mfa-icon">
+                </div>
+              </div>
+              <span class="badge-text">MFA</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Account Card 25 - Pinterest -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/pinterest.com.ico" alt="Pinterest" class="app-logo" data-domain="pinterest.com">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Pinterest</p>
+              <p class="account-name">Brand Awareness</p>
+              <p class="account-email">brandawareness@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+            <div class="account-badge mfa-badge">
+              <div class="mfa-icon-container">
+                <div class="mfa-icon-inner">
+                    <img src="assets/mfa-icon.svg" alt="" class="mfa-icon">
+                </div>
+              </div>
+              <span class="badge-text">MFA</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Account Card 26 - OpenAI -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/openai.com.ico" alt="OpenAI" class="app-logo" data-domain="openai.com">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">OpenAI</p>
+              <p class="account-name">Automation & AI</p>
+              <p class="account-email">automationai@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Account Card 27 - Grammarly -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/grammarly.com.ico" alt="Grammarly" class="app-logo" data-domain="grammarly.com">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Grammarly</p>
+              <p class="account-name">Copywriting Team</p>
+              <p class="account-email">copywriting@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Account Card 28 - Notion -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/notion.so.ico" alt="Notion" class="app-logo" data-domain="notion.so">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Notion</p>
+              <p class="account-name">Knowledge Base</p>
+              <p class="account-email">knowledgebase@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+            <div class="account-badge mfa-badge">
+              <div class="mfa-icon-container">
+                <div class="mfa-icon-inner">
+                    <img src="assets/mfa-icon.svg" alt="" class="mfa-icon">
+                </div>
+              </div>
+              <span class="badge-text">MFA</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Account Card 29 - Figma -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/figma.com.ico" alt="Figma" class="app-logo" data-domain="figma.com">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Figma</p>
+              <p class="account-name">Visual Design</p>
+              <p class="account-email">visualdesign@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Account Card 30 - Google -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/google.com.ico" alt="Google" class="app-logo" data-domain="google.com">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Google</p>
+              <p class="account-name">Analytics & Insights</p>
+              <p class="account-email">analyticsinsights@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+            <div class="account-badge mfa-badge">
+              <div class="mfa-icon-container">
+                <div class="mfa-icon-inner">
+                    <img src="assets/mfa-icon.svg" alt="" class="mfa-icon">
+                </div>
+              </div>
+              <span class="badge-text">MFA</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Account Card 31 - Notion -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/notion.so.ico" alt="Notion" class="app-logo" data-domain="notion.so">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Notion</p>
+              <p class="account-name">Campaign Planning</p>
+              <p class="account-email">campaignplanning@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+            <div class="account-badge mfa-badge">
+              <div class="mfa-icon-container">
+                <div class="mfa-icon-inner">
+                    <img src="assets/mfa-icon.svg" alt="" class="mfa-icon">
+                </div>
+              </div>
+              <span class="badge-text">MFA</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Account Card 32 - OpenAI -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/openai.com.ico" alt="OpenAI" class="app-logo" data-domain="openai.com">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">OpenAI</p>
+              <p class="account-name">Digital Strategy</p>
+              <p class="account-email">digitalstrategy@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Account Card 33 - Figma -->
+        <div class="account-card">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/figma.com.ico" alt="Figma" class="app-logo" data-domain="figma.com">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Figma</p>
+              <p class="account-name">Brand Development</p>
+              <p class="account-email">branddevelopment@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+            <div class="account-badge mfa-badge">
+              <div class="mfa-icon-container">
+                <div class="mfa-icon-inner">
+                  <img src="assets/mfa-icon.svg" alt="" class="mfa-icon">
+                </div>
+              </div>
+              <span class="badge-text">MFA</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Additional Accounts -->
+        <!-- Dropbox Accounts -->
+        <div class="account-card">
+          <div class="account-logo account-logo-alert">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/dropbox.com.ico" alt="Dropbox" class="app-logo" data-domain="dropbox.com">
+              </div>
+            </div>
+            <div class="account-logo-alert-icon">
+              <img src="assets/warning-icon.svg" alt="Alert" class="alert-icon-img">
+              <div class="custom-tooltip account-logo-alert-tooltip">
+                <div class="custom-tooltip-content">
+                  <p class="custom-tooltip-text">This account was flagged with bad credentials.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Dropbox</p>
+              <p class="account-name">Security Backups</p>
+              <p class="account-email">securitybackups@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+            <div class="account-badge mfa-badge">
+              <div class="mfa-icon-container">
+                <div class="mfa-icon-inner">
+                  <img src="assets/mfa-icon.svg" alt="" class="mfa-icon">
+                </div>
+              </div>
+              <span class="badge-text">MFA</span>
+            </div>
+            <div class="account-badge bad-credentials-badge">
+              <div class="bad-credentials-icon-container">
+                <div class="bad-credentials-icon-inner">
+                  <img src="assets/bad-credentials-icon.svg" alt="" class="bad-credentials-icon">
+                </div>
+              </div>
+              <span class="badge-text">Bad credentials</span>
+            </div>
+          </div>
+        </div>
+
+
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <button class="add-button" id="addButton">
+        <svg class="add-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="10" cy="10" r="9" stroke="#2698bf" stroke-width="1.5"/>
+          <path d="M10 6V14M6 10H14" stroke="#2698bf" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <span class="add-button-text">Add new item</span>
+      </button>
+    </div>
+
+    <!-- Dropdown Menu -->
+    <div class="dropdown-menu" id="dropdownMenu">
+      <!-- Regular account items -->
+      <button class="dropdown-item" data-account-item data-copy-email-item>
+        <span class="dropdown-item-text">Copy email</span>
+      </button>
+      <button class="dropdown-item" data-account-item data-copy-username-item>
+        <span class="dropdown-item-text">Copy username</span>
+      </button>
+      <button class="dropdown-item" data-account-item data-password-item>
+        <span class="dropdown-item-text">Copy password</span>
+      </button>
+      <button class="dropdown-item" data-totp-item data-account-item>
+        <span class="dropdown-item-text">Copy TOTP</span>
+      </button>
+      <div class="dropdown-divider" data-totp-divider data-account-item></div>
+      <button class="dropdown-item" data-account-item>
+        <span class="dropdown-item-text">See account details</span>
+      </button>
+      <button class="dropdown-item" data-account-item>
+        <span class="dropdown-item-text">Expand account details</span>
+      </button>
+      <div class="dropdown-divider" data-account-item></div>
+      <button class="dropdown-item" data-account-item>
+        <span class="dropdown-item-text">Edit account details</span>
+      </button>
+      
+      <!-- Secret items -->
+      <button class="dropdown-item" data-secret-item>
+        <span class="dropdown-item-text">Copy secret</span>
+      </button>
+      <button class="dropdown-item" data-secret-item>
+        <span class="dropdown-item-text">See secret and attachments</span>
+      </button>
+      <div class="dropdown-divider" data-secret-item></div>
+      <button class="dropdown-item" data-secret-item>
+        <span class="dropdown-item-text">Edit secret</span>
+      </button>
+    </div>
+
+    <!-- Filter Dropdown Menu -->
+    <div class="filter-dropdown-menu" id="filterDropdownMenu">
+      <button class="filter-dropdown-item" data-filter="all">
+        <span class="filter-dropdown-item-text">All items</span>
+        <svg class="checkmark-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: none;">
+          <path d="M13.3333 4L6 11.3333L2.66667 8" stroke="#2698bf" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <button class="filter-dropdown-item" data-filter="accounts">
+        <span class="filter-dropdown-item-text">Accounts</span>
+        <svg class="checkmark-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: none;">
+          <path d="M13.3333 4L6 11.3333L2.66667 8" stroke="#2698bf" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <button class="filter-dropdown-item" data-filter="secrets">
+        <span class="filter-dropdown-item-text">Secrets</span>
+        <svg class="checkmark-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: none;">
+          <path d="M13.3333 4L6 11.3333L2.66667 8" stroke="#2698bf" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Sort Dropdown Menu -->
+    <div class="sort-dropdown-menu" id="sortDropdownMenu">
+      <button class="sort-dropdown-item" data-sort="recently-used">
+        <span class="sort-dropdown-item-text">Recently used</span>
+        <svg class="checkmark-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: none;">
+          <path d="M13.3333 4L6 11.3333L2.66667 8" stroke="#2698bf" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <button class="sort-dropdown-item" data-sort="a-to-z">
+        <span class="sort-dropdown-item-text">A to Z</span>
+        <svg class="checkmark-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: none;">
+          <path d="M13.3333 4L6 11.3333L2.66667 8" stroke="#2698bf" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <button class="sort-dropdown-item" data-sort="z-to-a">
+        <span class="sort-dropdown-item-text">Z to A</span>
+        <svg class="checkmark-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: none;">
+          <path d="M13.3333 4L6 11.3333L2.66667 8" stroke="#2698bf" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <button class="sort-dropdown-item" data-sort="newest">
+        <span class="sort-dropdown-item-text">Newest to oldest</span>
+        <svg class="checkmark-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: none;">
+          <path d="M13.3333 4L6 11.3333L2.66667 8" stroke="#2698bf" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <button class="sort-dropdown-item" data-sort="oldest">
+        <span class="sort-dropdown-item-text">Oldest to newest</span>
+        <svg class="checkmark-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: none;">
+          <path d="M13.3333 4L6 11.3333L2.66667 8" stroke="#2698bf" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Account Details Modal -->
+    <div class="account-details-modal" id="accountDetailsModal">
+      <div class="account-details-container">
+        <!-- Header -->
+        <div class="account-details-header">
+          <button class="account-details-close-button" id="accountDetailsCloseButton" aria-label="Close">
+            <div class="close-button-bg"></div>
+            <div class="chevron-left-icon-container">
+              <img src="assets/chevron-left-icon.svg" alt="" class="chevron-left-icon">
+            </div>
+          </button>
+          <button class="account-details-edit-button" id="accountDetailsEditButton">
+            <span class="edit-button-text">Edit in Cerby</span>
+          </button>
+        </div>
+
+        <!-- Content -->
+        <div class="account-details-content">
+          <div class="account-details-main">
+            <!-- Title Section -->
+            <div class="account-details-title">
+              <div class="account-details-title-inner">
+                <div class="account-details-title-left">
+                  <div class="account-details-logo-container">
+                    <div class="account-details-logo" id="accountDetailsLogo">
+                      <img src="" alt="" class="account-details-logo-img" id="accountDetailsLogoImg">
+                    </div>
+                  </div>
+                  <div class="account-details-title-text">
+                    <p class="account-details-provider" id="accountDetailsProvider">Instagram</p>
+                    <p class="account-details-name" id="accountDetailsName">Marketing Contentzilla</p>
+                  </div>
+                </div>
+                <button class="account-details-open-button" id="accountDetailsOpenButton" aria-label="Auto-login" data-tooltip="Auto-login">
+                  <div class="open-new-icon-container">
+                    <img src="assets/login-icon.svg" alt="" class="open-new-icon">
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            <div class="account-details-banner" id="accountDetailsAlertBanner" style="display: none;">
+              <div class="account-details-banner-icon">
+                <img src="assets/bad-credentials-icon.svg" alt="Warning" class="warning-icon-img">
+              </div>
+              <p class="account-details-banner-text">
+                This account's credentials might be incorrect, and could affect login. <strong>Please update the credentials in Cerby.</strong>
+              </p>
+            </div>
+            <div class="account-details-banner account-details-banner-neutral" id="accountDetailsSsoBanner" style="display: none;">
+              <div class="account-details-banner-icon">
+                <svg class="sso-banner-icon" viewBox="0 0 12 12" aria-hidden="true" focusable="false">
+                  <path d="M6 0C9.31351 0.000230889 12 2.68643 12 6C12 9.31357 9.31351 11.9998 6 12C2.68629 12 0 9.31371 0 6C0 2.68629 2.68629 0 6 0ZM6.08008 2C4.51644 2 3.16306 2.89683 2.50488 4.2041L2.40625 4.41504C2.19076 4.91476 2.07986 5.45415 2.08008 6C2.08008 6.5647 2.19816 7.10335 2.40918 7.59082L2.50488 7.7959L2.63672 8.03711C3.33345 9.21249 4.61436 10 6.08008 10C7.09226 9.99992 7.95097 9.68508 8.59961 9.14258L8.72754 9.03125C9.48375 8.33491 9.91892 7.30884 9.91895 6.09082C9.91893 5.80748 9.89387 5.53501 9.84668 5.27344H6.08008V6.82031H8.23242C8.15127 7.25743 7.92554 7.63624 7.58691 7.91406L7.43457 8.02734C7.07647 8.26729 6.61809 8.40911 6.08008 8.40918C5.10347 8.40918 4.26716 7.79077 3.90723 6.93457L3.84082 6.75977C3.76093 6.51991 3.71582 6.26345 3.71582 6C3.71582 5.80237 3.74159 5.60848 3.78809 5.42285L3.84082 5.24023C4.15539 4.29483 5.03829 3.59082 6.08008 3.59082C6.66718 3.59091 7.19493 3.79223 7.60938 4.18848L8.75586 3.04199C8.06326 2.39679 7.15792 2.00009 6.08008 2Z" fill="currentColor"/>
+                </svg>
+              </div>
+              <p class="account-details-banner-text">
+                This account will attempt to sign in using Google SSO.
+              </p>
+            </div>
+
+            <!-- Fields -->
+            <div class="account-details-fields">
+              <!-- Secret note field (only for secrets) -->
+              <div class="account-details-field account-details-field-secret-note" id="accountDetailsSecretNoteField" style="display: none;">
+                <div class="account-details-field-content">
+                  <div class="account-details-field-inner">
+                    <div class="account-details-secret-note-header">
+                      <p class="account-details-field-label">Secret note</p>
+                      <div class="account-details-secret-note-actions">
+                        <button class="secret-note-action-button" id="secretNoteRevealButton" aria-label="Reveal secret">
+                          <div class="visibility-icon-container">
+                            <img src="assets/visibility-icon.svg" alt="Reveal" class="visibility-icon" id="secretNoteVisibilityIcon">
+                          </div>
+                        </button>
+                        <button class="secret-note-action-button" id="secretNoteCopyButton" aria-label="Copy secret">
+                          <div class="copy-icon-container">
+                            <img src="assets/copy-icon.svg" alt="Copy" class="copy-icon">
+                          </div>
+                        </button>
+                      </div>
+                    </div>
+                    <textarea class="account-details-secret-note-textarea" id="accountDetailsSecretNote" readonly></textarea>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Regular account fields -->
+              <button class="account-details-field account-details-field-username" id="accountDetailsEmailField">
+                <div class="account-details-field-content">
+                  <div class="account-details-field-inner">
+                    <p class="account-details-field-label">Username</p>
+                    <p class="account-details-field-value" id="accountDetailsEmail">contentzilla@mkt.com</p>
+                  </div>
+                  <div class="account-details-field-actions">
+                    <div class="copy-icon-container">
+                      <img src="assets/copy-icon.svg" alt="Copy" class="copy-icon">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <div class="account-details-field account-details-field-password" id="accountDetailsPasswordField">
+                <button class="password-field-left" id="passwordCopyButton" aria-label="Copy password">
+                  <div class="account-details-field-content">
+                    <div class="account-details-field-inner">
+                      <p class="account-details-field-label">Password</p>
+                      <p class="account-details-field-value" id="accountDetailsPasswordValue">••••••••••••••••••</p>
+                    </div>
+                    <div class="account-details-field-actions">
+                      <div class="copy-icon-container">
+                        <img src="assets/copy-icon-password.svg" alt="Copy" class="copy-icon">
+                      </div>
+                    </div>
+                  </div>
+                </button>
+                <button class="password-field-right" id="passwordRevealButton" aria-label="Reveal password">
+                  <div class="visibility-icon-container">
+                    <img src="assets/visibility-icon.svg" alt="Reveal" class="visibility-icon" id="passwordVisibilityIcon">
+                  </div>
+                </button>
+              </div>
+              <div class="account-details-field account-details-field-totp" id="accountDetailsTotpField" style="display: none;">
+                <button class="totp-field-left" id="totpCopyButton" aria-label="Copy TOTP">
+                  <div class="account-details-field-content">
+                    <div class="account-details-field-inner">
+                      <p class="account-details-field-label">TOTP code</p>
+                      <p class="account-details-field-value" id="accountDetailsTotpValue">123456</p>
+                    </div>
+                    <div class="account-details-field-actions">
+                      <div class="copy-icon-container">
+                        <img src="assets/copy-icon.svg" alt="Copy" class="copy-icon">
+                      </div>
+                    </div>
+                  </div>
+                </button>
+                <div class="totp-field-right" id="totpCounter" title="Copy to clipboard">
+                  <div class="totp-counter-circle" id="totpCounterCircle">
+                    <svg class="totp-counter-svg" width="24" height="24" viewBox="0 0 24 24">
+                      <circle class="totp-counter-bg" cx="12" cy="12" r="10" stroke="#e3e8ee" stroke-width="2" fill="none"/>
+                      <circle class="totp-counter-progress" cx="12" cy="12" r="10" stroke="#2698bf" stroke-width="2" fill="none" 
+                              stroke-dasharray="62.83" stroke-dashoffset="0" stroke-linecap="round" transform="rotate(-90 12 12)"/>
+                    </svg>
+                    <span class="totp-counter-text" id="totpCounterText">30</span>
+                  </div>
+                </div>
+              </div>
+              <button class="account-details-field account-details-field-username" id="accountDetailsPhoneField">
+                <div class="account-details-field-content">
+                  <div class="account-details-field-inner">
+                    <p class="account-details-field-label">Phone no.</p>
+                    <p class="account-details-field-value" id="accountDetailsPhone">7638984928</p>
+                  </div>
+                  <div class="account-details-field-actions">
+                    <div class="copy-icon-container">
+                      <img src="assets/copy-icon.svg" alt="Copy" class="copy-icon">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <div class="account-details-field account-details-field-url" id="accountDetailsUrlField">
+                <button class="url-field-left" id="urlCopyButton" aria-label="Copy URL">
+                  <div class="account-details-field-content">
+                    <div class="account-details-field-inner">
+                      <p class="account-details-field-label">URL</p>
+                      <p class="account-details-field-value" id="accountDetailsUrl">https://instagram.com/88932479...</p>
+                    </div>
+                    <div class="account-details-field-actions">
+                      <div class="copy-icon-container">
+                        <img src="assets/copy-icon-password.svg" alt="Copy" class="copy-icon">
+                      </div>
+                    </div>
+                  </div>
+                </button>
+                <button class="url-field-right" id="urlOpenButton" aria-label="Open in new tab">
+                  <div class="open-new-icon-container">
+                    <img src="assets/open-new-icon.svg" alt="Open in new tab" class="open-new-icon-url">
+                  </div>
+                </button>
+              </div>
+            </div>
+            
+            <!-- Attachments Section -->
+            <div class="account-details-attachments" id="accountDetailsAttachments" style="display: none;">
+              <h3 class="account-details-attachments-title">Attachments</h3>
+              <div class="account-details-attachments-list"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast-notification" id="toastNotification">
+      <span class="toast-text" id="toastText">Copied to clipboard</span>
+    </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
+

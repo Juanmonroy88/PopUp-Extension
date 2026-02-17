@@ -62,7 +62,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Inline account dropdown (login pages): header buttons now use settings icon (replacing folder icon) and outlined style (border, white background) per Figma.
 - Inline account dropdown: info button on each account card; appears only on hover, opens Cerby panel when clicked. Uses `assets/info-icon.svg` (vector icon from Figma).
-- Background: message handlers for `cerby-inline-open-settings` and `cerby-inline-open-panel` to open the side panel (Chrome) or popup tab (Safari).
+- Background: message handlers for `cerby-inline-open-settings` and `cerby-inline-open-panel` to open the extension popup (or new tab fallback).
 
 ### Changed
 - Inline account dropdown cards: hover state with rounded corners (8px), list spacing (gap 4px, padding 12px). Account cards use div + info button structure.
@@ -473,7 +473,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Changelog for tracking changes
 - Installation guide for portability
 - Version control documentation
-- Safari extension version
 
 ### Changed
 - Improved dropdown positioning to prevent cutoff near bottom of popup (opens above button when needed)

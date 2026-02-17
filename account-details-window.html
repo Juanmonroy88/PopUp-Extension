@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=420, height=640">
+  <title>Account details</title>
+  <link rel="stylesheet" href="popup.css">
+  <style>
+    body { width: 420px; min-height: 100vh; margin: 0; padding: 0; background: var(--background-default-main); overflow: auto; display: flex; flex-direction: column; }
+    .account-details-expanded-root .account-details-open-button { display: none !important; }
+    .account-details-expanded-root .account-details-content { flex: 1; padding-top: 24px; }
+    .account-details-window-footer {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      padding: 12px 16px;
+      background: var(--background-default-main);
+      border-top: 1px solid var(--border-default-primary, #e3e8ee);
+      gap: 8px;
+    }
+    .account-details-window-footer-logo {
+      display: block;
+      height: 20px;
+      width: 81px;
+      object-fit: contain;
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body class="account-details-expanded-root">
+  <div class="account-details-content">
+    <div class="account-details-main">
+      <div class="account-details-title">
+        <div class="account-details-title-inner">
+          <div class="account-details-title-left">
+            <div class="account-details-logo-container">
+              <div class="account-details-logo" id="accountDetailsLogo">
+                <img src="" alt="" class="account-details-logo-img app-logo" id="accountDetailsLogoImg">
+              </div>
+            </div>
+            <div class="account-details-title-text">
+              <p class="account-details-provider" id="accountDetailsProvider">—</p>
+              <p class="account-details-name" id="accountDetailsName">—</p>
+            </div>
+          </div>
+          <button class="account-details-open-button" aria-hidden="true" tabindex="-1"></button>
+        </div>
+      </div>
+
+      <div class="account-details-banner" id="accountDetailsAlertBanner" style="display: none;">
+        <div class="account-details-banner-icon">
+          <img src="assets/bad-credentials-icon.svg" alt="Warning" class="warning-icon-img">
+        </div>
+        <p class="account-details-banner-text">
+          This account's credentials might be incorrect, and could affect login. <strong>Please update the credentials in Cerby.</strong>
+        </p>
+      </div>
+      <div class="account-details-banner account-details-banner-neutral" id="accountDetailsSsoBanner" style="display: none;">
+        <div class="account-details-banner-icon">
+          <svg class="sso-banner-icon" viewBox="0 0 12 12" aria-hidden="true" focusable="false">
+            <path d="M6 0C9.31351 0.000230889 12 2.68643 12 6C12 9.31357 9.31351 11.9998 6 12C2.68629 12 0 9.31371 0 6C0 2.68629 2.68629 0 6 0ZM6.08008 2C4.51644 2 3.16306 2.89683 2.50488 4.2041L2.40625 4.41504C2.19076 4.91476 2.07986 5.45415 2.08008 6C2.08008 6.5647 2.19816 7.10335 2.40918 7.59082L2.50488 7.7959L2.63672 8.03711C3.33345 9.21249 4.61436 10 6.08008 10C7.09226 9.99992 7.95097 9.68508 8.59961 9.14258L8.72754 9.03125C9.48375 8.33491 9.91892 7.30884 9.91895 6.09082C9.91893 5.80748 9.89387 5.53501 9.84668 5.27344H6.08008V6.82031H8.23242C8.15127 7.25743 7.92554 7.63624 7.58691 7.91406L7.43457 8.02734C7.07647 8.26729 6.61809 8.40911 6.08008 8.40918C5.10347 8.40918 4.26716 7.79077 3.90723 6.93457L3.84082 6.75977C3.76093 6.51991 3.71582 6.26345 3.71582 6C3.71582 5.80237 3.74159 5.60848 3.78809 5.42285L3.84082 5.24023C4.15539 4.29483 5.03829 3.59082 6.08008 3.59082C6.66718 3.59091 7.19493 3.79223 7.60938 4.18848L8.75586 3.04199C8.06326 2.39679 7.15792 2.00009 6.08008 2Z" fill="currentColor"/>
+          </svg>
+        </div>
+        <p class="account-details-banner-text">This account will attempt to sign in using Google SSO.</p>
+      </div>
+
+      <div class="account-details-fields">
+        <button class="account-details-field account-details-field-username" id="accountDetailsEmailField">
+          <div class="account-details-field-content">
+            <div class="account-details-field-inner">
+              <p class="account-details-field-label">Username</p>
+              <p class="account-details-field-value" id="accountDetailsEmail">—</p>
+            </div>
+            <div class="account-details-field-actions">
+              <div class="copy-icon-container">
+                <img src="assets/copy-icon.svg" alt="Copy" class="copy-icon">
+              </div>
+            </div>
+          </div>
+        </button>
+        <div class="account-details-field account-details-field-password" id="accountDetailsPasswordField">
+          <button class="password-field-left" id="passwordCopyButton" aria-label="Copy password">
+            <div class="account-details-field-content">
+              <div class="account-details-field-inner">
+                <p class="account-details-field-label">Password</p>
+                <p class="account-details-field-value" id="accountDetailsPasswordValue">••••••••••••••••••</p>
+              </div>
+              <div class="account-details-field-actions">
+                <div class="copy-icon-container">
+                  <img src="assets/copy-icon-password.svg" alt="Copy" class="copy-icon">
+                </div>
+              </div>
+            </div>
+          </button>
+          <button class="password-field-right" id="passwordRevealButton" aria-label="Reveal password">
+            <div class="visibility-icon-container">
+              <img src="assets/visibility-icon.svg" alt="Reveal" class="visibility-icon" id="passwordVisibilityIcon">
+            </div>
+          </button>
+        </div>
+        <div class="account-details-field account-details-field-totp" id="accountDetailsTotpField" style="display: none;">
+          <button class="totp-field-left" id="totpCopyButton" aria-label="Copy TOTP">
+            <div class="account-details-field-content">
+              <div class="account-details-field-inner">
+                <p class="account-details-field-label">TOTP code</p>
+                <p class="account-details-field-value" id="accountDetailsTotpValue">123456</p>
+              </div>
+              <div class="account-details-field-actions">
+                <div class="copy-icon-container">
+                  <img src="assets/copy-icon.svg" alt="Copy" class="copy-icon">
+                </div>
+              </div>
+            </div>
+          </button>
+          <div class="totp-field-right" id="totpCounter" title="Copy to clipboard">
+            <div class="totp-counter-circle" id="totpCounterCircle">
+              <svg class="totp-counter-svg" width="24" height="24" viewBox="0 0 24 24">
+                <circle class="totp-counter-bg" cx="12" cy="12" r="10" stroke="#e3e8ee" stroke-width="2" fill="none"/>
+                <circle class="totp-counter-progress" cx="12" cy="12" r="10" stroke="#2698bf" stroke-width="2" fill="none" stroke-dasharray="62.83" stroke-dashoffset="0" stroke-linecap="round" transform="rotate(-90 12 12)"/>
+              </svg>
+              <span class="totp-counter-text" id="totpCounterText">30</span>
+            </div>
+          </div>
+        </div>
+        <button class="account-details-field account-details-field-username" id="accountDetailsPhoneField" style="display: none;">
+          <div class="account-details-field-content">
+            <div class="account-details-field-inner">
+              <p class="account-details-field-label">Phone no.</p>
+              <p class="account-details-field-value" id="accountDetailsPhone">—</p>
+            </div>
+            <div class="account-details-field-actions">
+              <div class="copy-icon-container">
+                <img src="assets/copy-icon.svg" alt="Copy" class="copy-icon">
+              </div>
+            </div>
+          </div>
+        </button>
+        <div class="account-details-field account-details-field-url" id="accountDetailsUrlField">
+          <button class="url-field-left" id="urlCopyButton" aria-label="Copy URL">
+            <div class="account-details-field-content">
+              <div class="account-details-field-inner">
+                <p class="account-details-field-label">URL</p>
+                <p class="account-details-field-value" id="accountDetailsUrl">—</p>
+              </div>
+              <div class="account-details-field-actions">
+                <div class="copy-icon-container">
+                  <img src="assets/copy-icon-password.svg" alt="Copy" class="copy-icon">
+                </div>
+              </div>
+            </div>
+          </button>
+          <button class="url-field-right" id="urlOpenButton" aria-label="Open in new tab">
+            <div class="open-new-icon-container">
+              <img src="assets/open-new-icon.svg" alt="Open in new tab" class="open-new-icon-url">
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="account-details-window-footer">
+    <img src="assets/cerby-logo.svg" alt="Cerby" class="account-details-window-footer-logo">
+  </footer>
+
+  <div class="toast-notification" id="toastNotification">
+    <span class="toast-text" id="toastText">Copied to clipboard</span>
+  </div>
+
+  <script src="account-details-window.js"></script>
+</body>
+</html>

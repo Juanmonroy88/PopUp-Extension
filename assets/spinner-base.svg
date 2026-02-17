@@ -1,0 +1,7 @@
+<svg width="152" height="152" viewBox="0 0 152 152" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Full circle in light gray -->
+  <circle cx="76" cy="76" r="72" stroke="#d9d9d9" stroke-width="8" fill="none"/>
+  <!-- Blue segment - approximately 90 degrees (1/4 of circle) -->
+  <path d="M 76 4 A 72 72 0 0 1 148 76" stroke="#4f6489" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+

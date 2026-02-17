@@ -3,11 +3,7 @@
   "name": "Password Manager (Popup)",
   "version": "1.9.43",
   "description": "A clean and accessible password manager browser extension",
-  "permissions": [
-    "storage",
-    "tabs",
-    "scripting"
-  ],
+  "permissions": ["storage", "tabs", "scripting"],
   "background": {
     "service_worker": "background.js"
   },
@@ -116,12 +112,8 @@
         "https://teuxdeux.com/*",
         "https://*.teuxdeux.com/*"
       ],
-      "js": [
-        "inline.js"
-      ],
-      "css": [
-        "inline.css"
-      ],
+      "js": ["inline.js"],
+      "css": ["inline.css"],
       "run_at": "document_idle"
     }
   ],
@@ -148,13 +140,10 @@
         "assets/open-new-icon.svg",
         "assets/info-icon.svg"
       ],
-      "matches": [
-        "<all_urls>"
-      ]
+      "matches": ["<all_urls>"]
     }
   ],
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'; img-src 'self' https://logo.clearbit.com https://cdn.brandfetch.io https://www.google.com https://icons.duckduckgo.com;"
   }
 }
-
