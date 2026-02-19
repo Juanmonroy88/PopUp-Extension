@@ -615,7 +615,7 @@ body {
   min-height: 0;
   overflow-x: hidden;
   overflow-y: auto;
-  padding: var(--space-m) 0;
+  padding: var(--space-m) var(--space-xl);
 }
 
 .section-header {
@@ -644,6 +644,7 @@ body {
   gap: var(--space-s);
   align-items: flex-start;
   padding: var(--space-m) var(--space-xl);
+  margin: 0 0 var(--space-s) 0;
   width: 100%;
   box-sizing: border-box;
   cursor: pointer;
@@ -651,6 +652,7 @@ body {
   outline: none;
   position: relative;
   overflow: visible;
+  border-radius: var(--radius-s);
 }
 
 .account-card:focus-visible {
