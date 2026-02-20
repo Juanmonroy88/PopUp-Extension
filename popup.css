@@ -615,14 +615,14 @@ body {
   min-height: 0;
   overflow-x: hidden;
   overflow-y: auto;
-  padding: var(--space-m) var(--space-xl);
+  padding: var(--space-xs);
 }
 
 .section-header {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--space-xs) var(--space-xl);
+  padding: var(--space-xs);
   width: 100%;
 }
 
@@ -643,8 +643,8 @@ body {
   display: flex;
   gap: var(--space-s);
   align-items: flex-start;
-  padding: var(--space-m) var(--space-xl);
-  margin: 0 0 var(--space-s) 0;
+  padding: var(--space-xs);
+  margin: 0 0 var(--space-xs) 0;
   width: 100%;
   box-sizing: border-box;
   cursor: pointer;
