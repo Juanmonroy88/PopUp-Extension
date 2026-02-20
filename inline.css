@@ -1417,6 +1417,13 @@
   color: #7187ad;
 }
 
+/* Search highlight - matches extension blue/teal */
+.cerby-search-highlight {
+  color: #2698bf;
+  font-weight: 600;
+  background: transparent;
+}
+
 .cerby-login-suggestion-header {
   display: flex;
   align-items: center;
