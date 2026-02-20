@@ -615,7 +615,7 @@ body {
   min-height: 0;
   overflow-x: hidden;
   overflow-y: auto;
-  padding: var(--space-xs);
+  padding: var(--space-s);
 }
 
 .section-header {
@@ -643,8 +643,8 @@ body {
   display: flex;
   gap: var(--space-s);
   align-items: flex-start;
-  padding: var(--space-xs);
-  margin: 0 0 var(--space-xs) 0;
+  padding: var(--space-s);
+  margin: 0 0 var(--space-s) 0;
   width: 100%;
   box-sizing: border-box;
   cursor: pointer;
