@@ -2086,6 +2086,15 @@ function hideBadCredentialsWarning() {
 const CERBY_EXPANDED_ACCOUNTS_MODAL_ID = 'cerby-expanded-accounts-modal';
 let expandedAccountsModal = null;
 
+function getHighlightedHtml(text, term, escapeHtml) {
+  if (text == null) text = '';
+  const escaped = escapeHtml(text);
+  if (!term || !term.trim()) return escaped;
+  const escapedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp('(' + escapedTerm + ')', 'gi');
+  return escaped.replace(regex, '<span class="cerby-search-highlight">$1</span>');
+}
+
 function showExpandedAccountsModal(accounts, input, fieldType) {
   if (!document.body || !accounts.length) return;
   hideExpandedAccountsModal();
@@ -2183,13 +2192,20 @@ function showExpandedAccountsModal(accounts, input, fieldType) {
   const listEl = modal.querySelector('#cerbyExpandedAccountsList');
   const searchInput = modal.querySelector('.cerby-expanded-accounts-modal__search-input');
   function filterExpandedAccounts() {
-    const term = (searchInput?.value || '').toLowerCase().trim();
+    const term = (searchInput?.value || '').trim();
+    const termLower = term.toLowerCase();
     modal.querySelectorAll('.cerby-login-suggestion-card').forEach((btn) => {
       const name = (btn.dataset.name || '').toLowerCase();
       const email = (btn.dataset.email || '').toLowerCase();
       const service = (btn.dataset.service || '').toLowerCase();
-      const match = !term || name.includes(term) || email.includes(term) || service.includes(term);
+      const match = !term || name.includes(termLower) || email.includes(termLower) || service.includes(termLower);
       btn.style.display = match ? '' : 'none';
+      if (match) {
+        const nameEl = btn.querySelector('.cerby-login-suggestion-name');
+        const emailEl = btn.querySelector('.cerby-login-suggestion-email');
+        if (nameEl) nameEl.innerHTML = getHighlightedHtml(btn.dataset.name || '', term, escapeHtml);
+        if (emailEl) emailEl.innerHTML = getHighlightedHtml(btn.dataset.email || '', term, escapeHtml);
+      }
     });
   }
   searchInput?.addEventListener('input', filterExpandedAccounts);
@@ -2361,13 +2377,20 @@ async function tryShowLoginSuggestionModal() {
     const listEl = modal.querySelector('#cerbyLoginSuggestionList');
     const searchInput = modal.querySelector('.cerby-expanded-accounts-modal__search-input');
     function filterLoginSuggestionAccounts() {
-      const term = (searchInput?.value || '').toLowerCase().trim();
+      const term = (searchInput?.value || '').trim();
+      const termLower = term.toLowerCase();
       modal.querySelectorAll('.cerby-login-suggestion-card').forEach((btn) => {
         const name = (btn.dataset.name || '').toLowerCase();
         const email = (btn.dataset.email || '').toLowerCase();
         const service = (btn.dataset.service || '').toLowerCase();
-        const match = !term || name.includes(term) || email.includes(term) || service.includes(term);
+        const match = !term || name.includes(termLower) || email.includes(termLower) || service.includes(termLower);
         btn.style.display = match ? '' : 'none';
+        if (match) {
+          const nameEl = btn.querySelector('.cerby-login-suggestion-name');
+          const emailEl = btn.querySelector('.cerby-login-suggestion-email');
+          if (nameEl) nameEl.innerHTML = getHighlightedHtml(btn.dataset.name || '', term, escapeHtml);
+          if (emailEl) emailEl.innerHTML = getHighlightedHtml(btn.dataset.email || '', term, escapeHtml);
+        }
       });
     }
     searchInput?.addEventListener('input', filterLoginSuggestionAccounts);

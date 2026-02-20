@@ -1703,8 +1703,14 @@ function initializeAccountCardListeners() {
       if (e.target.closest('.account-action-button') || e.target.closest('.dropdown-menu')) {
         return;
       }
-      // Open account details modal
-      showAccountDetails(newCard);
+      const accountServiceEl = newCard.querySelector('.account-service');
+      const accountService = accountServiceEl?.dataset.originalText || accountServiceEl?.textContent.trim() || '';
+      // Secret cards open account details; account cards trigger auto-login
+      if (accountService === 'Secret') {
+        showAccountDetails(newCard);
+      } else {
+        triggerAutoLogin(newCard);
+      }
     });
   });
 }
@@ -1822,7 +1828,13 @@ function handleAccountCardKeyDown(event) {
     case 'Enter':
     case ' ':
       event.preventDefault();
-      showAccountDetails(card);
+      const accountServiceEl = card.querySelector('.account-service');
+      const accountService = accountServiceEl?.dataset.originalText || accountServiceEl?.textContent.trim() || '';
+      if (accountService === 'Secret') {
+        showAccountDetails(card);
+      } else {
+        triggerAutoLogin(card);
+      }
       break;
     default:
       break;
@@ -2859,40 +2871,20 @@ function initializeAccountDetailsModal() {
 
 }
 
-// Initialize login button functionality
+// Trigger auto-login for an account card (used when clicking the card)
+function triggerAutoLogin(card) {
+  if (!card) return;
+  const accountServiceEl = card.querySelector('.account-service');
+  const accountService = accountServiceEl?.dataset.originalText || accountServiceEl?.textContent.trim() || '';
+  if (accountService === 'Secret') return;
+  const hasBadCredentials = card.querySelector('.account-logo-alert-icon') !== null ||
+    card.querySelector('.bad-credentials-badge') !== null;
+  proceedWithLogin(accountService, hasBadCredentials);
+}
+
+// Initialize login button functionality (no-op since login buttons were removed; card click handles auto-login)
 function initializeLoginButtons() {
-  const loginButtons = document.querySelectorAll('.login-button');
-  
-  loginButtons.forEach(button => {
-    syncBadCredentialsAutoLoginTooltip(button);
-    
-    button.addEventListener('click', async function(e) {
-      e.stopPropagation();
-      
-      const card = button.closest('.account-card');
-      if (!card) return;
-      
-      // Get the account provider
-      const accountServiceEl = card.querySelector('.account-service');
-      const accountService = accountServiceEl?.dataset.originalText || accountServiceEl?.textContent.trim() || '';
-      
-      // Skip if it's a secret card
-      if (accountService === 'Secret') return;
-      
-      // Check if account has bad credentials
-      const hasBadCredentials = card.querySelector('.account-logo-alert-icon') !== null || 
-                                 card.querySelector('.bad-credentials-badge') !== null;
-      
-      if (hasBadCredentials) {
-        // Proceed with login but show warning overlay in the tab
-        proceedWithLogin(accountService, true);
-        return;
-      }
-      
-      // Proceed with normal login flow
-      proceedWithLogin(accountService, false);
-    });
-  });
+  // Login buttons removed - auto-login is triggered by clicking the whole card
 }
 
 
