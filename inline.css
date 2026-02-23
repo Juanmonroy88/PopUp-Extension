@@ -207,6 +207,64 @@
   outline-offset: 2px;
 }
 
+/* Inline Field Indicator - inside login field on right (Figma: node 10388-7326) */
+.cerby-inline-field-indicator {
+  display: none;
+  position: absolute;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  z-index: 2147483646;
+  pointer-events: auto;
+}
+
+.cerby-inline-field-indicator--visible {
+  display: flex;
+}
+
+.cerby-inline-field-indicator__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: #f4f4f4;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.cerby-inline-field-indicator__btn:hover,
+.cerby-inline-field-indicator__btn:focus-visible {
+  background: #e8ecf0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  outline: none;
+}
+
+.cerby-inline-field-indicator__btn:active {
+  background: #d2d8e2;
+}
+
+.cerby-inline-field-indicator__icon {
+  display: block;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.cerby-inline-field-indicator__chevron {
+  width: 14px;
+  height: 14px;
+  transform: rotate(180deg);
+}
+
+.cerby-inline-field-indicator__logo {
+  width: 16px;
+  height: 14px;
+}
+
 /* Inline Account Dropdown - login pages (Figma: node 10311-4826) */
 .cerby-inline-account-dropdown {
   display: none;
