@@ -213,7 +213,11 @@
   position: absolute;
   flex-direction: row;
   align-items: center;
-  gap: 4px;
+  gap: 0;
+  padding: 4px;
+  background: #ffffff;
+  border-radius: 999px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
   z-index: 2147483646;
   pointer-events: auto;
 }
@@ -231,20 +235,39 @@
   padding: 0;
   border: none;
   border-radius: 50%;
-  background: #f4f4f4;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
   cursor: pointer;
   transition: background-color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.cerby-inline-field-indicator__btn:hover,
-.cerby-inline-field-indicator__btn:focus-visible {
-  background: #e8ecf0;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
   outline: none;
 }
 
-.cerby-inline-field-indicator__btn:active {
+/* Left button (expand) - active state: light blue-grey with subtle depth */
+.cerby-inline-field-indicator__expand {
+  background: #e8ecf0;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.5), 0 1px 1px rgba(0, 0, 0, 0.06);
+}
+
+.cerby-inline-field-indicator__expand:hover,
+.cerby-inline-field-indicator__expand:focus-visible {
+  background: #d2d8e2;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.4), 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.cerby-inline-field-indicator__expand:active {
+  background: #c0c7d4;
+}
+
+/* Right button (Cerby) - inactive state: white, flat */
+.cerby-inline-field-indicator__cerby {
+  background: #ffffff;
+}
+
+.cerby-inline-field-indicator__cerby:hover,
+.cerby-inline-field-indicator__cerby:focus-visible {
+  background: #e8ecf0;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.5);
+}
+
+.cerby-inline-field-indicator__cerby:active {
   background: #d2d8e2;
 }
 
@@ -252,14 +275,17 @@
   display: block;
   object-fit: contain;
   pointer-events: none;
+  filter: none;
 }
 
+/* Chevron: dark blue-grey, pointing up */
 .cerby-inline-field-indicator__chevron {
-  width: 14px;
-  height: 14px;
+  width: 12px;
+  height: 12px;
   transform: rotate(180deg);
 }
 
+/* Cerby logo: dark blue-grey */
 .cerby-inline-field-indicator__logo {
   width: 16px;
   height: 14px;

@@ -23,7 +23,7 @@ const MODULE_OFFSET = 8;
 const SAVE_ACCOUNT_MODAL_ID = 'cerby-save-account-modal';
 const INLINE_ACCOUNT_DROPDOWN_ID = 'cerby-inline-account-dropdown';
 const INLINE_FIELD_INDICATOR_ID = 'cerby-inline-field-indicator';
-const INLINE_FIELD_INDICATOR_WIDTH = 56;
+const INLINE_FIELD_INDICATOR_WIDTH = 64;
 const INLINE_FIELD_INDICATOR_INPUT_PADDING = 64;
 
 /** Top-level document so the modal is centered on the full browser viewport with overlay. */
@@ -1671,7 +1671,7 @@ function updateInlineFieldIndicatorPosition() {
   const scrollX = window.scrollX || window.pageXOffset;
   const scrollY = window.scrollY || window.pageYOffset;
   const padding = 8;
-  const indicatorHeight = 28;
+  const indicatorHeight = 36;
 
   const left = rect.left + scrollX + rect.width - INLINE_FIELD_INDICATOR_WIDTH - padding;
   const top = rect.top + scrollY + (rect.height - indicatorHeight) / 2;
