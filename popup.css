@@ -2031,6 +2031,8 @@ input:focus-visible {
   outline: 2px solid var(--button-primary-borderless-enabled);
   outline-offset: 2px;
   background: var(--background-default-secondary);
+  position: relative;
+  z-index: 1;
 }
 
 .account-details-field-password:hover,
@@ -2187,6 +2189,8 @@ input:focus-visible {
   outline: 2px solid var(--button-primary-borderless-enabled);
   outline-offset: 2px;
   background: var(--background-default-secondary);
+  position: relative;
+  z-index: 1;
 }
 
 .account-details-field-url:hover,
