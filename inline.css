@@ -220,10 +220,44 @@
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
   z-index: 2147483646;
   pointer-events: auto;
+  overflow: hidden;
+  max-width: 36px;
+  opacity: 0;
 }
 
 .cerby-inline-field-indicator--visible {
   display: flex;
+  animation: cerby-indicator-enter 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+.cerby-inline-field-indicator--visible .cerby-inline-field-indicator__chevron {
+  animation: cerby-chevron-appear 0.25s ease 0.18s both;
+}
+
+@keyframes cerby-indicator-enter {
+  0% {
+    max-width: 36px;
+    opacity: 0;
+  }
+  50% {
+    max-width: 64px;
+    opacity: 1;
+  }
+  100% {
+    max-width: 64px;
+    opacity: 1;
+  }
+}
+
+@keyframes cerby-chevron-appear {
+  0% {
+    opacity: 0;
+    transform: rotate(180deg) scale(0.6);
+  }
+  100% {
+    opacity: 1;
+    transform: rotate(180deg) scale(1);
+  }
 }
 
 .cerby-inline-field-indicator__btn {
@@ -278,11 +312,16 @@
   filter: none;
 }
 
-/* Chevron: dark blue-grey, pointing up */
+/* Chevron: rotates based on dropdown state - up when closed, down when open */
 .cerby-inline-field-indicator__chevron {
   width: 12px;
   height: 12px;
   transform: rotate(180deg);
+  transition: transform 0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.cerby-inline-field-indicator--dropdown-open .cerby-inline-field-indicator__chevron {
+  transform: rotate(0deg);
 }
 
 /* Cerby logo: dark blue-grey */
@@ -309,10 +348,21 @@
   z-index: 2147483646;
   font-family: "Proxima Nova", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   pointer-events: auto;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 0.2s ease, transform 0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .cerby-inline-account-dropdown--visible {
   display: flex;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.cerby-inline-account-dropdown--hiding {
+  opacity: 0;
+  transform: translateY(-4px);
+  pointer-events: none;
 }
 
 .cerby-inline-account-dropdown__header {

@@ -1646,6 +1646,7 @@ function createInlineFieldIndicator(input, fieldType, accounts) {
   cerbyBtn.addEventListener('click', (e) => {
     e.preventDefault();
     e.stopPropagation();
+    hideInlineAccountDropdown();
     hideInlineFieldIndicator();
     if (chromeApi?.runtime?.sendMessage) {
       chromeApi.runtime.sendMessage({ type: 'cerby-inline-open-panel' });
@@ -1708,17 +1709,36 @@ async function tryShowInlineAccountDropdown(input, fieldType) {
   requestAnimationFrame(() => {
     updateInlineAccountDropdownPosition();
     dropdown.classList.add('cerby-inline-account-dropdown--visible');
+    inlineFieldIndicator?.classList.add('cerby-inline-field-indicator--dropdown-open');
   });
 }
 
 function hideInlineAccountDropdown() {
-  if (inlineAccountDropdown) {
-    const input = inlineAccountDropdown._cerbyInput;
-    if (input && inlineAccountDropdown._cerbyInputFilterHandler) {
-      input.removeEventListener('input', inlineAccountDropdown._cerbyInputFilterHandler);
+  if (!inlineAccountDropdown) return;
+  const dropdown = inlineAccountDropdown;
+  const input = dropdown._cerbyInput;
+  inlineFieldIndicator?.classList.remove('cerby-inline-field-indicator--dropdown-open');
+
+  const finishHide = () => {
+    if (input && dropdown._cerbyInputFilterHandler) {
+      input.removeEventListener('input', dropdown._cerbyInputFilterHandler);
     }
-    inlineAccountDropdown.remove();
-    inlineAccountDropdown = null;
+    dropdown.remove();
+    if (inlineAccountDropdown === dropdown) {
+      inlineAccountDropdown = null;
+    }
+  };
+
+  if (dropdown.classList.contains('cerby-inline-account-dropdown--visible')) {
+    dropdown.classList.add('cerby-inline-account-dropdown--hiding');
+    dropdown.addEventListener('transitionend', function onEnd(e) {
+      if (e.target === dropdown && e.propertyName === 'opacity') {
+        dropdown.removeEventListener('transitionend', onEnd);
+        finishHide();
+      }
+    }, { once: true });
+  } else {
+    finishHide();
   }
 }
 
