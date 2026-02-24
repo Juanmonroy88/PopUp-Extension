@@ -141,7 +141,6 @@ function handleFocusIn(event) {
 
   const isEmailField = isEligibleInput(target);
   const isPasswordField = isEligiblePasswordInput(target);
-  const isLoginContext = isLoginPage();
 
   if (!isEmailField && !isPasswordField) {
     if (moduleElement && !moduleContainsTarget(target)) hideModule();
@@ -152,18 +151,14 @@ function handleFocusIn(event) {
 
   currentInput = target;
 
-  if (isLoginContext) {
-    hideModule();
-    hideInlineAccountDropdown();
-    tryShowInlineFieldIndicator(target, isPasswordField ? 'password' : 'email');
-  } else if (isSignupContext()) {
+  if (isSignupContext()) {
     hideInlineAccountDropdown();
     hideInlineFieldIndicator();
     showModule(target, isPasswordField ? 'password' : 'email');
   } else {
     hideModule();
     hideInlineAccountDropdown();
-    hideInlineFieldIndicator();
+    tryShowInlineFieldIndicator(target, isPasswordField ? 'password' : 'email');
   }
 }
 
