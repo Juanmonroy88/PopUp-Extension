@@ -1588,6 +1588,8 @@ async function tryShowInlineFieldIndicator(input, fieldType) {
     updateInlineFieldIndicatorPosition();
     indicator.classList.add('cerby-inline-field-indicator--visible');
   });
+
+  tryShowInlineAccountDropdown(input, fieldType);
 }
 
 function hideInlineFieldIndicator() {
@@ -1634,8 +1636,11 @@ function createInlineFieldIndicator(input, fieldType, accounts) {
   expandBtn.addEventListener('click', (e) => {
     e.preventDefault();
     e.stopPropagation();
-    hideInlineFieldIndicator();
-    tryShowInlineAccountDropdown(input, fieldType);
+    if (inlineAccountDropdown && inlineAccountDropdown.classList.contains('cerby-inline-account-dropdown--visible')) {
+      hideInlineAccountDropdown();
+    } else {
+      tryShowInlineAccountDropdown(input, fieldType);
+    }
   });
 
   cerbyBtn.addEventListener('click', (e) => {
