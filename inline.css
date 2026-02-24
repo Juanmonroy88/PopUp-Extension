@@ -349,19 +349,19 @@
   font-family: "Proxima Nova", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   pointer-events: auto;
   opacity: 0;
-  transform: translateY(-4px);
-  transition: opacity 0.2s ease, transform 0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transform: translateY(-6px) scale(0.98);
+  transition: opacity 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .cerby-inline-account-dropdown--visible {
   display: flex;
   opacity: 1;
-  transform: translateY(0);
+  transform: translateY(0) scale(1);
 }
 
 .cerby-inline-account-dropdown--hiding {
   opacity: 0;
-  transform: translateY(-4px);
+  transform: translateY(-6px) scale(0.98);
   pointer-events: none;
 }
 

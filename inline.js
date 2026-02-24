@@ -1589,11 +1589,20 @@ async function tryShowInlineFieldIndicator(input, fieldType) {
     indicator.classList.add('cerby-inline-field-indicator--visible');
   });
 
-  tryShowInlineAccountDropdown(input, fieldType);
+  const INDICATOR_ANIMATION_MS = 380;
+  const dropdownShowTimer = setTimeout(() => {
+    if (inlineFieldIndicator === indicator && currentInput === input) {
+      tryShowInlineAccountDropdown(input, fieldType);
+    }
+  }, INDICATOR_ANIMATION_MS);
+  indicator._cerbyDropdownShowTimer = dropdownShowTimer;
 }
 
 function hideInlineFieldIndicator() {
   if (inlineFieldIndicator) {
+    if (inlineFieldIndicator._cerbyDropdownShowTimer) {
+      clearTimeout(inlineFieldIndicator._cerbyDropdownShowTimer);
+    }
     const input = inlineFieldIndicator._cerbyInput;
     if (input && input.style) {
       input.style.paddingRight = inlineFieldIndicatorOriginalPaddingRight !== null ? inlineFieldIndicatorOriginalPaddingRight : '';
