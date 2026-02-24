@@ -2654,28 +2654,11 @@ function initializeAccountDetailsModal() {
   let passwordRevealed = false;
   let actualPassword = ''; // Store actual password when revealed
   
-  // Handle hover states for password field sections
+  // Handle hover states for password field sections (keyboard focus is per-section via CSS :focus-visible)
   if (passwordField) {
     const passwordFieldLeft = passwordField.querySelector('.password-field-left');
     const passwordFieldRight = passwordField.querySelector('.password-field-right');
-    
-    if (!passwordField.dataset.keyboardFocusInit) {
-      const handleFocusIn = () => {
-        if (lastInteractionWasKeyboard) {
-          passwordField.classList.add('keyboard-focus-ring');
-        }
-      };
-      const handleFocusOut = (e) => {
-        if (!passwordField.contains(e.relatedTarget)) {
-          passwordField.classList.remove('keyboard-focus-ring');
-        }
-      };
 
-      passwordField.addEventListener('focusin', handleFocusIn);
-      passwordField.addEventListener('focusout', handleFocusOut);
-      passwordField.dataset.keyboardFocusInit = 'true';
-    }
-    
     if (passwordFieldRight && !passwordFieldRight.dataset.keyboardInteractionInit) {
       const addRightHoverState = () => {
         if (passwordFieldLeft) {
@@ -2690,12 +2673,7 @@ function initializeAccountDetailsModal() {
 
       passwordFieldRight.addEventListener('mouseenter', addRightHoverState);
       passwordFieldRight.addEventListener('mouseleave', removeRightHoverState);
-      passwordFieldRight.addEventListener('focus', () => {
-        addRightHoverState();
-        if (lastInteractionWasKeyboard) {
-          passwordField.classList.add('keyboard-focus-ring');
-        }
-      });
+      passwordFieldRight.addEventListener('focus', addRightHoverState);
       passwordFieldRight.addEventListener('blur', removeRightHoverState);
       passwordFieldRight.dataset.keyboardInteractionInit = 'true';
     }
@@ -2752,27 +2730,10 @@ function initializeAccountDetailsModal() {
   const urlCopyButton = document.getElementById('urlCopyButton');
   const urlOpenButton = document.getElementById('urlOpenButton');
   
-  // Handle hover states for URL field sections
+  // Handle hover states for URL field sections (keyboard focus is per-section via CSS :focus-visible)
   if (urlField) {
     const urlFieldLeft = urlField.querySelector('.url-field-left');
     const urlFieldRight = urlField.querySelector('.url-field-right');
-    
-    if (!urlField.dataset.keyboardFocusInit) {
-      const handleFocusIn = () => {
-        if (lastInteractionWasKeyboard) {
-          urlField.classList.add('keyboard-focus-ring');
-        }
-      };
-      const handleFocusOut = (e) => {
-        if (!urlField.contains(e.relatedTarget)) {
-          urlField.classList.remove('keyboard-focus-ring');
-        }
-      };
-
-      urlField.addEventListener('focusin', handleFocusIn);
-      urlField.addEventListener('focusout', handleFocusOut);
-      urlField.dataset.keyboardFocusInit = 'true';
-    }
 
     if (urlFieldRight && !urlFieldRight.dataset.keyboardInteractionInit) {
       const addRightHoverState = () => {
@@ -2788,12 +2749,7 @@ function initializeAccountDetailsModal() {
 
       urlFieldRight.addEventListener('mouseenter', addRightHoverState);
       urlFieldRight.addEventListener('mouseleave', removeRightHoverState);
-      urlFieldRight.addEventListener('focus', () => {
-        addRightHoverState();
-        if (lastInteractionWasKeyboard) {
-          urlField.classList.add('keyboard-focus-ring');
-        }
-      });
+      urlFieldRight.addEventListener('focus', addRightHoverState);
       urlFieldRight.addEventListener('blur', removeRightHoverState);
       urlFieldRight.dataset.keyboardInteractionInit = 'true';
     }
