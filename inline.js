@@ -166,12 +166,27 @@ function moduleContainsTarget(target) {
   return moduleElement && moduleElement.contains(target);
 }
 
+function isInsideSameForm(element, formElement) {
+  if (!element || !formElement) return false;
+  return formElement.contains(element);
+}
+
 function handleDismiss(event) {
   const target = event.target;
   const inModule = moduleElement && (moduleContainsTarget(target) || target === currentInput);
   const inDropdown = inlineAccountDropdown && (inlineAccountDropdown.contains(target) || target === currentInput);
   const inIndicator = inlineFieldIndicator && (inlineFieldIndicator.contains(target) || target === currentInput);
   if (inModule || inDropdown || inIndicator) return;
+
+  const inputForm = currentInput?.form;
+  const clickInForm = inputForm && isInsideSameForm(target, inputForm);
+
+  if (inlineFieldIndicator && clickInForm) {
+    hideModule();
+    hideInlineAccountDropdown();
+    return;
+  }
+
   hideModule();
   hideInlineAccountDropdown();
   hideInlineFieldIndicator();
@@ -1667,14 +1682,44 @@ function createInlineFieldIndicator(input, fieldType, accounts) {
   return container;
 }
 
+function findEquivalentInputInForm(oldInput) {
+  if (!oldInput || !document.body) return null;
+  const form = oldInput.form || oldInput.closest?.('form');
+  if (!form) return null;
+  const type = (oldInput.getAttribute('type') || 'text').toLowerCase();
+  const name = oldInput.getAttribute('name') || '';
+  const id = oldInput.getAttribute('id') || '';
+  const inputs = form.querySelectorAll('input');
+  for (const inp of inputs) {
+    if (inp === oldInput && document.contains(inp)) return oldInput;
+    const t = (inp.getAttribute('type') || 'text').toLowerCase();
+    const n = inp.getAttribute('name') || '';
+    const i = inp.getAttribute('id') || '';
+    if (t !== type) continue;
+    if (name && name === n) return inp;
+    if (id && id === i) return inp;
+  }
+  return null;
+}
+
 function updateInlineFieldIndicatorPosition() {
   if (!inlineFieldIndicator) return;
-  const input = currentInput || inlineFieldIndicator._cerbyInput;
+  let input = currentInput || inlineFieldIndicator._cerbyInput;
   if (!input) return;
+
+  if (!document.contains(input)) {
+    const replacement = findEquivalentInputInForm(input);
+    if (replacement) {
+      input = replacement;
+      inlineFieldIndicator._cerbyInput = input;
+      currentInput = input;
+    } else {
+      return;
+    }
+  }
 
   const rect = input.getBoundingClientRect();
   if (!rect || (rect.width === 0 && rect.height === 0)) {
-    hideInlineFieldIndicator();
     return;
   }
 
