@@ -1915,6 +1915,9 @@ function openExpandedAccountDetails(accountCard) {
 
   const usernameDisplay = accountEmail || accountName || '';
   const displayUrl = loginUrl.length > 35 ? loginUrl.substring(0, 35) + '...' : loginUrl;
+  const mfaCodesGrouped = accountCard.dataset.mfaCodesGrouped === '1';
+  const cerbyManagedEmail = accountCard.dataset.cerbyManagedEmail || '';
+  const cerbyManagedPhone = accountCard.dataset.cerbyManagedPhone || '';
 
   const payload = {
     accountService,
@@ -1929,7 +1932,14 @@ function openExpandedAccountDetails(accountCard) {
     hasMFA,
     password: '••••••••••••••••',
     phone: accountCard.dataset.phone || '',
-    totp: '123456'
+    totp: '123456',
+    mfaCodesGrouped: mfaCodesGrouped && hasMFA && !hasGoogleSso,
+    cerbyManagedEmail,
+    cerbyManagedPhone,
+    cerbyManagedEmailOtp: accountCard.dataset.cerbyManagedEmailOtp || '',
+    cerbyManagedEmailOtpTime: accountCard.dataset.cerbyManagedEmailOtpTime || '',
+    cerbyManagedPhoneOtp: accountCard.dataset.cerbyManagedPhoneOtp || '',
+    cerbyManagedPhoneOtpTime: accountCard.dataset.cerbyManagedPhoneOtpTime || ''
   };
 
   const chromeApi = typeof chrome !== 'undefined' ? chrome : (typeof browser !== 'undefined' ? browser : null);
@@ -2233,21 +2243,44 @@ function showAccountDetails(accountCard) {
     // Check if account has MFA badge
     const mfaBadge = accountCard.querySelector('.mfa-badge');
     const hasMFA = mfaBadge !== null;
-    
-    // Show/hide TOTP field based on MFA badge
-    if (totpField) {
-      if (hasMFA) {
-        totpField.style.display = hasGoogleSso ? 'none' : 'flex';
-        // Initialize TOTP code and counter
-        if (!hasGoogleSso) {
-          initializeTotpField();
+    const mfaCodesGrouped = accountCard.dataset.mfaCodesGrouped === '1';
+    const cerbyManagedEmail = accountCard.dataset.cerbyManagedEmail || '';
+    const cerbyManagedPhone = accountCard.dataset.cerbyManagedPhone || '';
+
+    const mfaCodesSection = document.getElementById('accountDetailsMfaCodesSection');
+    const mfaCodeCardEmail = document.getElementById('mfaCodeCardEmail');
+    const mfaCodeCardPhone = document.getElementById('mfaCodeCardPhone');
+
+    if (mfaCodesGrouped && hasMFA && !hasGoogleSso) {
+      // Show grouped MFA Codes section (Cerby Auth + Cerby-managed Email/Phone)
+      if (mfaCodesSection) mfaCodesSection.style.display = 'flex';
+      if (totpField) totpField.style.display = 'none';
+      if (phoneField) phoneField.style.display = 'none';
+
+      initializeTotpFieldMfa();
+      populateMfaCerbyManagedFields(cerbyManagedEmail, cerbyManagedPhone, accountCard);
+      if (mfaCodeCardEmail) mfaCodeCardEmail.style.display = cerbyManagedEmail ? 'flex' : 'none';
+      if (mfaCodeCardPhone) mfaCodeCardPhone.style.display = cerbyManagedPhone ? 'flex' : 'none';
+    } else {
+      // Standard layout: separate TOTP and Phone fields
+      if (mfaCodesSection) mfaCodesSection.style.display = 'none';
+      if (totpField) {
+        if (hasMFA) {
+          totpField.style.display = hasGoogleSso ? 'none' : 'flex';
+          if (!hasGoogleSso) {
+            initializeTotpField();
+          } else {
+            stopTotpCounter();
+          }
         } else {
+          totpField.style.display = 'none';
           stopTotpCounter();
         }
-      } else {
-        totpField.style.display = 'none';
-        // Stop TOTP counter if running
-        stopTotpCounter();
+      }
+      if (phoneField) {
+        phoneField.style.display = (hasGoogleSso ? 'none' : 'flex');
+        const phoneEl = document.getElementById('accountDetailsPhone');
+        if (phoneEl) phoneEl.textContent = accountCard.dataset.phone || '—';
       }
     }
   }
@@ -2363,6 +2396,62 @@ function stopTotpCounter() {
   if (totpCounterInterval) {
     clearInterval(totpCounterInterval);
     totpCounterInterval = null;
+  }
+}
+
+// Initialize TOTP field in MFA Codes section (Cerby Auth app)
+function initializeTotpFieldMfa() {
+  stopTotpCounter();
+  const totpValue = generateTotpCode();
+  const totpValueEl = document.getElementById('mfaCerbyAuthTotpValue');
+  if (totpValueEl) totpValueEl.textContent = totpValue;
+  startTotpCounterMfa();
+}
+
+function startTotpCounterMfa() {
+  const counterText = document.getElementById('mfaCerbyAuthCounterText');
+  const counterCircle = document.getElementById('mfaCerbyAuthCounterCircle');
+  const totpValueEl = document.getElementById('mfaCerbyAuthTotpValue');
+  if (!counterText || !counterCircle || !totpValueEl) return;
+
+  const tick = () => {
+    const now = Date.now();
+    const periodStart = Math.floor(now / 30000) * 30000;
+    const periodEnd = periodStart + 30000;
+    let timeRemaining = Math.ceil((periodEnd - now) / 1000);
+    if (timeRemaining <= 0) {
+      totpValueEl.textContent = generateTotpCode();
+      timeRemaining = 30;
+    }
+    const ct = document.getElementById('mfaCerbyAuthCounterText');
+    const cc = document.getElementById('mfaCerbyAuthCounterCircle');
+    if (ct && cc) updateTotpCounter(ct, cc, timeRemaining);
+  };
+
+  const now = Date.now();
+  const periodStart = Math.floor(now / 30000) * 30000;
+  const periodEnd = periodStart + 30000;
+  let initial = Math.ceil((periodEnd - now) / 1000);
+  updateTotpCounter(counterText, counterCircle, initial);
+  totpCounterInterval = setInterval(tick, 1000);
+}
+
+function populateMfaCerbyManagedFields(cerbyManagedEmail, cerbyManagedPhone, accountCard) {
+  if (cerbyManagedEmail) {
+    const valEl = document.getElementById('mfaCerbyEmailValue');
+    const codeEl = document.getElementById('mfaCerbyEmailOtpCode');
+    const timeEl = document.getElementById('mfaCerbyEmailOtpTime');
+    if (valEl) valEl.textContent = cerbyManagedEmail;
+    if (codeEl) codeEl.textContent = (accountCard.dataset.cerbyManagedEmailOtp || '—').replace(/(\d{3})(\d{3})/, '$1 $2');
+    if (timeEl) timeEl.textContent = accountCard.dataset.cerbyManagedEmailOtpTime || '—';
+  }
+  if (cerbyManagedPhone) {
+    const valEl = document.getElementById('mfaCerbyPhoneValue');
+    const codeEl = document.getElementById('mfaCerbyPhoneOtpCode');
+    const timeEl = document.getElementById('mfaCerbyPhoneOtpTime');
+    if (valEl) valEl.textContent = cerbyManagedPhone;
+    if (codeEl) codeEl.textContent = (accountCard.dataset.cerbyManagedPhoneOtp || '—').replace(/(\d{3})(\d{3})/, '$1 $2');
+    if (timeEl) timeEl.textContent = accountCard.dataset.cerbyManagedPhoneOtpTime || '—';
   }
 }
 
@@ -2811,6 +2900,103 @@ function initializeAccountDetailsModal() {
   if (totpCounter) {
     totpCounter.style.cursor = 'pointer';
     totpCounter.addEventListener('click', copyTotpCode);
+  }
+
+  // MFA Codes section - Cerby Auth copy
+  const mfaCerbyAuthCopyBtn = document.getElementById('mfaCerbyAuthCopyButton');
+  const mfaCerbyAuthCounterEl = document.getElementById('mfaCerbyAuthCounter');
+  if (mfaCerbyAuthCopyBtn) {
+    mfaCerbyAuthCopyBtn.addEventListener('click', async function(e) {
+      e.stopPropagation();
+      const el = document.getElementById('mfaCerbyAuthTotpValue');
+      const code = el?.textContent.trim();
+      if (code) {
+        try {
+          await navigator.clipboard.writeText(code);
+          showToast('TOTP copied to clipboard');
+        } catch (err) {
+          showToast('TOTP copied to clipboard');
+        }
+      }
+    });
+  }
+  if (mfaCerbyAuthCounterEl) {
+    mfaCerbyAuthCounterEl.style.cursor = 'pointer';
+    mfaCerbyAuthCounterEl.addEventListener('click', async function(e) {
+      e.stopPropagation();
+      const el = document.getElementById('mfaCerbyAuthTotpValue');
+      const code = el?.textContent.trim();
+      if (code) {
+        try {
+          await navigator.clipboard.writeText(code);
+          showToast('TOTP copied to clipboard');
+        } catch (err) {
+          showToast('TOTP copied to clipboard');
+        }
+      }
+    });
+  }
+
+  // MFA Cerby-managed Email: copy OTP, refresh
+  const mfaEmailCopyBtn = document.getElementById('mfaCerbyEmailCopyButton');
+  const mfaEmailRefreshBtn = document.getElementById('mfaCerbyEmailRefreshButton');
+  if (mfaEmailCopyBtn) {
+    mfaEmailCopyBtn.addEventListener('click', async function(e) {
+      if (e.target.closest('.mfa-cerby-managed-refresh')) return;
+      e.stopPropagation();
+      const codeEl = document.getElementById('mfaCerbyEmailOtpCode');
+      const code = (codeEl?.textContent || '').replace(/\s/g, '');
+      if (code) {
+        try {
+          await navigator.clipboard.writeText(code);
+          showToast('OTP copied to clipboard');
+        } catch (err) {
+          showToast('OTP copied to clipboard');
+        }
+      }
+    });
+  }
+  if (mfaEmailRefreshBtn) {
+    mfaEmailRefreshBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      e.preventDefault();
+      const codeEl = document.getElementById('mfaCerbyEmailOtpCode');
+      const timeEl = document.getElementById('mfaCerbyEmailOtpTime');
+      if (codeEl) codeEl.textContent = generateTotpCode().replace(/(\d{3})(\d{3})/, '$1 $2');
+      if (timeEl) timeEl.textContent = 'Just now';
+      showToast('New OTP requested');
+    });
+  }
+
+  // MFA Cerby-managed Phone: copy OTP, refresh
+  const mfaPhoneCopyBtn = document.getElementById('mfaCerbyPhoneCopyButton');
+  const mfaPhoneRefreshBtn = document.getElementById('mfaCerbyPhoneRefreshButton');
+  if (mfaPhoneCopyBtn) {
+    mfaPhoneCopyBtn.addEventListener('click', async function(e) {
+      if (e.target.closest('.mfa-cerby-managed-refresh')) return;
+      e.stopPropagation();
+      const codeEl = document.getElementById('mfaCerbyPhoneOtpCode');
+      const code = (codeEl?.textContent || '').replace(/\s/g, '');
+      if (code) {
+        try {
+          await navigator.clipboard.writeText(code);
+          showToast('OTP copied to clipboard');
+        } catch (err) {
+          showToast('OTP copied to clipboard');
+        }
+      }
+    });
+  }
+  if (mfaPhoneRefreshBtn) {
+    mfaPhoneRefreshBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      e.preventDefault();
+      const codeEl = document.getElementById('mfaCerbyPhoneOtpCode');
+      const timeEl = document.getElementById('mfaCerbyPhoneOtpTime');
+      if (codeEl) codeEl.textContent = generateTotpCode().replace(/(\d{3})(\d{3})/, '$1 $2');
+      if (timeEl) timeEl.textContent = 'Just now';
+      showToast('New OTP requested');
+    });
   }
 
 }

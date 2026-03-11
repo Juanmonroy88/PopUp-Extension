@@ -71,6 +71,39 @@
     totpCounterInterval = setInterval(tick, 1000);
   }
 
+  function startTotpCounterMfa() {
+    const counterText = document.getElementById('mfaCerbyAuthCounterText');
+    const counterCircle = document.getElementById('mfaCerbyAuthCounterCircle');
+    const totpValueEl = document.getElementById('mfaCerbyAuthTotpValue');
+    if (!counterText || !counterCircle || !totpValueEl) return;
+
+    function tick() {
+      const now = Date.now();
+      const periodStart = Math.floor(now / 30000) * 30000;
+      const periodEnd = periodStart + 30000;
+      let timeRemaining = Math.ceil((periodEnd - now) / 1000);
+      if (timeRemaining <= 0) {
+        totpValueEl.textContent = generateTotpCode();
+        timeRemaining = 30;
+      }
+      const ct = document.getElementById('mfaCerbyAuthCounterText');
+      const cc = document.getElementById('mfaCerbyAuthCounterCircle');
+      if (ct && cc) updateTotpCounter(ct, cc, timeRemaining);
+    }
+
+    const now = Date.now();
+    const periodStart = Math.floor(now / 30000) * 30000;
+    const periodEnd = periodStart + 30000;
+    let initial = Math.ceil((periodEnd - now) / 1000);
+    updateTotpCounter(counterText, counterCircle, initial);
+    totpCounterInterval = setInterval(tick, 1000);
+  }
+
+  function formatOtpWithSpace(code) {
+    const s = (code || '').toString().replace(/\D/g, '');
+    return s.length >= 6 ? s.slice(0, 3) + ' ' + s.slice(3, 6) : s || '—';
+  }
+
   function stopTotpCounter() {
     if (totpCounterInterval) {
       clearInterval(totpCounterInterval);
@@ -165,6 +198,67 @@
       totpCounter.addEventListener('click', copyTotp);
     }
 
+    function copyMfaCerbyAuth() {
+      const el = document.getElementById('mfaCerbyAuthTotpValue');
+      const code = el?.textContent.trim() || '';
+      if (code) {
+        navigator.clipboard.writeText(code).then(function() {
+          showToast('TOTP copied to clipboard');
+        }).catch(function() {});
+      }
+    }
+    document.getElementById('mfaCerbyAuthCopyButton')?.addEventListener('click', function(e) {
+      e.stopPropagation();
+      copyMfaCerbyAuth();
+    });
+    const mfaCerbyAuthCounter = document.getElementById('mfaCerbyAuthCounter');
+    if (mfaCerbyAuthCounter) {
+      mfaCerbyAuthCounter.style.cursor = 'pointer';
+      mfaCerbyAuthCounter.addEventListener('click', function(e) {
+        e.stopPropagation();
+        copyMfaCerbyAuth();
+      });
+    }
+
+    function setupMfaCerbyCopy(el, copyText) {
+      if (!el) return;
+      el.addEventListener('click', async function(e) {
+        if (e.target.closest('.mfa-cerby-managed-refresh')) return;
+        e.stopPropagation();
+        const text = (typeof copyText === 'string' ? copyText : copyText()) || '';
+        if (text) {
+          try {
+            await navigator.clipboard.writeText(text.replace(/\s/g, ''));
+            showToast('OTP copied to clipboard');
+          } catch (err) {}
+        }
+      });
+    }
+    document.getElementById('mfaCerbyEmailRefreshButton')?.addEventListener('click', function(e) {
+      e.stopPropagation();
+      e.preventDefault();
+      const codeEl = document.getElementById('mfaCerbyEmailOtpCode');
+      const timeEl = document.getElementById('mfaCerbyEmailOtpTime');
+      if (codeEl) codeEl.textContent = formatOtpWithSpace(generateTotpCode());
+      if (timeEl) timeEl.textContent = 'Just now';
+      showToast('New OTP requested');
+    });
+    document.getElementById('mfaCerbyPhoneRefreshButton')?.addEventListener('click', function(e) {
+      e.stopPropagation();
+      e.preventDefault();
+      const codeEl = document.getElementById('mfaCerbyPhoneOtpCode');
+      const timeEl = document.getElementById('mfaCerbyPhoneOtpTime');
+      if (codeEl) codeEl.textContent = formatOtpWithSpace(generateTotpCode());
+      if (timeEl) timeEl.textContent = 'Just now';
+      showToast('New OTP requested');
+    });
+    setupMfaCerbyCopy(document.getElementById('mfaCerbyEmailCopyButton'), function() {
+      return document.getElementById('mfaCerbyEmailOtpCode')?.textContent || '';
+    });
+    setupMfaCerbyCopy(document.getElementById('mfaCerbyPhoneCopyButton'), function() {
+      return document.getElementById('mfaCerbyPhoneOtpCode')?.textContent || '';
+    });
+
     document.getElementById('accountDetailsPhoneField')?.addEventListener('click', async function() {
       const el = document.getElementById('accountDetailsPhone');
       const text = el?.textContent.trim() || '';
@@ -221,8 +315,49 @@
     setDisplay('accountDetailsAlertBanner', !p.isSecret && p.hasAlertBadge);
     setDisplay('accountDetailsSsoBanner', !p.isSecret && p.hasGoogleSso);
     setDisplay('accountDetailsPasswordField', !p.isSecret && !p.hasGoogleSso);
-    setDisplay('accountDetailsTotpField', !p.isSecret && !p.hasGoogleSso && p.hasMFA);
-    setDisplay('accountDetailsPhoneField', !p.isSecret && !p.hasGoogleSso && !!p.phone);
+
+    const mfaSection = document.getElementById('accountDetailsMfaCodesSection');
+    const totpField = document.getElementById('accountDetailsTotpField');
+    const phoneField = document.getElementById('accountDetailsPhoneField');
+    const mfaCodeCardEmail = document.getElementById('mfaCodeCardEmail');
+    const mfaCodeCardPhone = document.getElementById('mfaCodeCardPhone');
+
+    if (p.mfaCodesGrouped) {
+      setDisplay('accountDetailsMfaCodesSection', true);
+      setDisplay('accountDetailsTotpField', false);
+      setDisplay('accountDetailsPhoneField', false);
+
+      setText('mfaCerbyAuthTotpValue', p.totp || generateTotpCode());
+      if (mfaSection) mfaSection.style.display = 'flex';
+      if (totpField) totpField.style.display = 'none';
+      if (phoneField) phoneField.style.display = 'none';
+
+      if (p.cerbyManagedEmail) {
+        setText('mfaCerbyEmailValue', p.cerbyManagedEmail);
+        setText('mfaCerbyEmailOtpCode', formatOtpWithSpace(p.cerbyManagedEmailOtp));
+        setText('mfaCerbyEmailOtpTime', p.cerbyManagedEmailOtpTime || '—');
+        if (mfaCodeCardEmail) mfaCodeCardEmail.style.display = 'flex';
+      } else if (mfaCodeCardEmail) {
+        mfaCodeCardEmail.style.display = 'none';
+      }
+      if (p.cerbyManagedPhone) {
+        setText('mfaCerbyPhoneValue', p.cerbyManagedPhone);
+        setText('mfaCerbyPhoneOtpCode', formatOtpWithSpace(p.cerbyManagedPhoneOtp));
+        setText('mfaCerbyPhoneOtpTime', p.cerbyManagedPhoneOtpTime || '—');
+        if (mfaCodeCardPhone) mfaCodeCardPhone.style.display = 'flex';
+      } else if (mfaCodeCardPhone) {
+        mfaCodeCardPhone.style.display = 'none';
+      }
+
+      startTotpCounterMfa();
+    } else {
+      if (mfaSection) mfaSection.style.display = 'none';
+      setDisplay('accountDetailsTotpField', !p.isSecret && !p.hasGoogleSso && p.hasMFA);
+      setDisplay('accountDetailsPhoneField', !p.isSecret && !p.hasGoogleSso && !!p.phone);
+      if (!p.isSecret && !p.hasGoogleSso && p.hasMFA) {
+        startTotpCounter();
+      }
+    }
 
     const logoEl = document.getElementById('accountDetailsLogo');
     const logoImg = document.getElementById('accountDetailsLogoImg');

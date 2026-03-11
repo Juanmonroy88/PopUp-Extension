@@ -1099,7 +1099,7 @@
           <p class="section-title">Other items:</p>
         </div>
 
-        <!-- Account Card 3 - Mailchimp -->
+        <!-- Account Card 3 - Mailchimp (with SSO) -->
         <div class="account-card">
           <div class="account-logo">
             <div class="logo-placeholder">
@@ -1141,6 +1141,50 @@
                 </div>
               </div>
               <span class="badge-text">SSO</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Account Card 3b - Mailchimp (no SSO, MFA + Cerby-managed email/phone) -->
+        <div class="account-card" data-mfa-codes-grouped="1" data-cerby-managed-email="gd5434hf%kljsdf7823jkd@cerby-inbox.com" data-cerby-managed-email-otp="564879" data-cerby-managed-email-otp-time="1 min. ago" data-cerby-managed-phone="+1 55 345 774897" data-cerby-managed-phone-otp="083492" data-cerby-managed-phone-otp-time="12 min. ago">
+          <div class="account-logo">
+            <div class="logo-placeholder">
+              <div class="app-logo-container">
+                <img src="https://icons.duckduckgo.com/ip3/mailchimp.com.ico" alt="Mailchimp" class="app-logo" data-domain="mailchimp.com">
+              </div>
+            </div>
+          </div>
+          <div class="account-info">
+            <div class="account-details">
+              <p class="account-service">Mailchimp</p>
+              <p class="account-name">Newsletter Campaigns</p>
+              <p class="account-email">newsletter@contentzilla.com</p>
+            </div>
+            <div class="account-actions">
+              <button class="account-action-button login-button" aria-label="Auto-login" data-tooltip="Auto-login">
+                <div class="login-icon-container">
+                  <div class="login-icon-wrapper">
+                    <div class="login-icon-inner">
+                      <img src="assets/login-icon.svg" alt="Login" class="login-icon-img">
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button class="account-action-button" aria-label="More actions" data-tooltip="More actions">
+                <div class="overflow-icon-container">
+                  <div class="overflow-icon-inner">
+                    <img src="assets/overflow-icon.svg" alt="More options" class="overflow-icon-img">
+                  </div>
+                </div>
+              </button>
+            </div>
+            <div class="account-badge mfa-badge">
+              <div class="mfa-icon-container">
+                <div class="mfa-icon-inner">
+                    <img src="assets/mfa-icon.svg" alt="" class="mfa-icon">
+                </div>
+              </div>
+              <span class="badge-text">MFA</span>
             </div>
           </div>
         </div>
@@ -2712,8 +2756,8 @@
           </div>
         </div>
 
-        <!-- Account Card 13 - Notion -->
-        <div class="account-card">
+        <!-- Account Card 13 - Notion (no SSO, MFA + Cerby-managed email/phone) -->
+        <div class="account-card" data-mfa-codes-grouped="1" data-cerby-managed-email="gd5434hf%kljsdf7823jkd@cerby-inbox.com" data-cerby-managed-email-otp="564879" data-cerby-managed-email-otp-time="1 min. ago" data-cerby-managed-phone="+1 55 345 774897" data-cerby-managed-phone-otp="083492" data-cerby-managed-phone-otp-time="12 min. ago">
           <div class="account-logo">
             <div class="logo-placeholder">
               <div class="app-logo-container">
@@ -3847,6 +3891,80 @@
                     <img src="assets/visibility-icon.svg" alt="Reveal" class="visibility-icon" id="passwordVisibilityIcon">
                   </div>
                 </button>
+              </div>
+              <!-- MFA Codes section (grouped: Cerby Auth + Email + Phone) - shown only for accounts with data-mfa-codes-grouped -->
+              <div class="account-details-mfa-codes-section" id="accountDetailsMfaCodesSection" style="display: none;">
+                <h3 class="account-details-mfa-codes-title">MFA Codes</h3>
+                <div class="account-details-mfa-codes-cards">
+                  <div class="mfa-code-card mfa-code-card-cerby-auth account-details-field account-details-field-totp">
+                    <button class="totp-field-left" id="mfaCerbyAuthCopyButton" aria-label="Copy TOTP">
+                      <div class="account-details-field-content">
+                        <div class="account-details-field-inner">
+                          <p class="account-details-field-label">Cerby Auth app</p>
+                          <p class="account-details-field-value" id="mfaCerbyAuthTotpValue">123456</p>
+                        </div>
+                        <div class="account-details-field-actions">
+                          <div class="copy-icon-container">
+                            <img src="assets/copy-icon.svg" alt="Copy" class="copy-icon">
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+                    <div class="totp-field-right" id="mfaCerbyAuthCounter" title="Copy to clipboard">
+                      <div class="totp-counter-circle" id="mfaCerbyAuthCounterCircle">
+                        <svg class="totp-counter-svg" width="24" height="24" viewBox="0 0 24 24">
+                          <circle class="totp-counter-bg" cx="12" cy="12" r="10" stroke="#e3e8ee" stroke-width="2" fill="none"/>
+                          <circle class="totp-counter-progress" cx="12" cy="12" r="10" stroke="#2698bf" stroke-width="2" fill="none" stroke-dasharray="62.83" stroke-dashoffset="0" stroke-linecap="round" transform="rotate(-90 12 12)"/>
+                        </svg>
+                        <span class="totp-counter-text" id="mfaCerbyAuthCounterText">30</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="mfa-code-card mfa-code-card-cerby-email" id="mfaCodeCardEmail" style="display: none;">
+                    <div class="mfa-cerby-managed-field" id="mfaCerbyEmailCopyButton" role="button" tabindex="0" aria-label="Copy OTP">
+                      <div class="mfa-cerby-managed-header">
+                        <span class="account-details-field-label">Email</span>
+                        <span class="account-details-chip cerby-managed-chip">Cerby-managed</span>
+                      </div>
+                      <p class="mfa-cerby-managed-value" id="mfaCerbyEmailValue">—</p>
+                      <div class="mfa-cerby-managed-otp-row">
+                        <span class="mfa-cerby-managed-otp-label">OTP code</span>
+                        <span class="mfa-cerby-managed-otp-code" id="mfaCerbyEmailOtpCode">—</span>
+                        <span class="mfa-cerby-managed-otp-time" id="mfaCerbyEmailOtpTime">—</span>
+                        <button type="button" class="mfa-cerby-managed-refresh" id="mfaCerbyEmailRefreshButton" aria-label="Request new OTP">
+                          <img src="assets/refresh-icon.svg" alt="" class="mfa-cerby-refresh-icon">
+                        </button>
+                      </div>
+                      <div class="account-details-field-actions mfa-cerby-managed-actions">
+                        <div class="copy-icon-container">
+                          <img src="assets/copy-icon.svg" alt="Copy" class="copy-icon">
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="mfa-code-card mfa-code-card-cerby-phone" id="mfaCodeCardPhone" style="display: none;">
+                    <div class="mfa-cerby-managed-field" id="mfaCerbyPhoneCopyButton" role="button" tabindex="0" aria-label="Copy OTP">
+                      <div class="mfa-cerby-managed-header">
+                        <span class="account-details-field-label">Phone no.</span>
+                        <span class="account-details-chip cerby-managed-chip">Cerby-managed</span>
+                      </div>
+                      <p class="mfa-cerby-managed-value" id="mfaCerbyPhoneValue">—</p>
+                      <div class="mfa-cerby-managed-otp-row">
+                        <span class="mfa-cerby-managed-otp-label">OTP code</span>
+                        <span class="mfa-cerby-managed-otp-code" id="mfaCerbyPhoneOtpCode">—</span>
+                        <span class="mfa-cerby-managed-otp-time" id="mfaCerbyPhoneOtpTime">—</span>
+                        <button type="button" class="mfa-cerby-managed-refresh" id="mfaCerbyPhoneRefreshButton" aria-label="Request new OTP">
+                          <img src="assets/refresh-icon.svg" alt="" class="mfa-cerby-refresh-icon">
+                        </button>
+                      </div>
+                      <div class="account-details-field-actions mfa-cerby-managed-actions">
+                        <div class="copy-icon-container">
+                          <img src="assets/copy-icon.svg" alt="Copy" class="copy-icon">
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
               <div class="account-details-field account-details-field-totp" id="accountDetailsTotpField" style="display: none;">
                 <button class="totp-field-left" id="totpCopyButton" aria-label="Copy TOTP">
