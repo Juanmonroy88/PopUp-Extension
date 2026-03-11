@@ -13,6 +13,8 @@
   --text-default-contrast: #f8f8f8;
   --text-default-main: #0a111d;
   --button-primary-borderless-enabled: #2698bf;
+  --button-primary-solid-enabled: #007da8;
+  --button-primary-solid-hover: #006a8f;
   --primitive-purple-700: #482966;
   --primitive-purple-500: #bd5df0;
   --primitive-teal-500: #14b8a6;
@@ -1925,13 +1927,13 @@ input:focus-visible {
 }
 
 .account-details-autologin-button {
-  background: var(--primitive-teal-500);
+  background: var(--button-primary-solid-enabled);
   color: var(--text-default-contrast);
   border: 1px solid transparent;
 }
 
 .account-details-autologin-button:hover {
-  background: var(--primitive-teal-600);
+  background: var(--button-primary-solid-hover);
 }
 
 .account-details-autologin-button .account-details-action-icon {
