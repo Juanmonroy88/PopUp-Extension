@@ -1703,14 +1703,8 @@ function initializeAccountCardListeners() {
       if (e.target.closest('.account-action-button') || e.target.closest('.dropdown-menu')) {
         return;
       }
-      const accountServiceEl = newCard.querySelector('.account-service');
-      const accountService = accountServiceEl?.dataset.originalText || accountServiceEl?.textContent.trim() || '';
-      // Secret cards open account details; account cards trigger auto-login
-      if (accountService === 'Secret') {
-        showAccountDetails(newCard);
-      } else {
-        triggerAutoLogin(newCard);
-      }
+      // Clicking the card (except buttons) opens account details
+      showAccountDetails(newCard);
     });
   });
 }
@@ -1828,13 +1822,7 @@ function handleAccountCardKeyDown(event) {
     case 'Enter':
     case ' ':
       event.preventDefault();
-      const accountServiceEl = card.querySelector('.account-service');
-      const accountService = accountServiceEl?.dataset.originalText || accountServiceEl?.textContent.trim() || '';
-      if (accountService === 'Secret') {
-        showAccountDetails(card);
-      } else {
-        triggerAutoLogin(card);
-      }
+      showAccountDetails(card);
       break;
     default:
       break;
@@ -2838,9 +2826,36 @@ function triggerAutoLogin(card) {
   proceedWithLogin(accountService, hasBadCredentials);
 }
 
-// Initialize login button functionality (no-op since login buttons were removed; card click handles auto-login)
+// Initialize login button functionality
 function initializeLoginButtons() {
-  // Login buttons removed - auto-login is triggered by clicking the whole card
+  const loginButtons = document.querySelectorAll('.login-button');
+
+  loginButtons.forEach(button => {
+    syncBadCredentialsAutoLoginTooltip(button);
+
+    button.addEventListener('click', async function(e) {
+      e.stopPropagation();
+
+      const card = button.closest('.account-card');
+      if (!card) return;
+
+      const accountServiceEl = card.querySelector('.account-service');
+      const accountService = accountServiceEl?.dataset.originalText || accountServiceEl?.textContent.trim() || '';
+
+      // Skip if it's a secret card (secrets don't have login buttons, but guard just in case)
+      if (accountService === 'Secret') return;
+
+      const hasBadCredentials = card.querySelector('.account-logo-alert-icon') !== null ||
+        card.querySelector('.bad-credentials-badge') !== null;
+
+      if (hasBadCredentials) {
+        proceedWithLogin(accountService, true);
+        return;
+      }
+
+      proceedWithLogin(accountService, false);
+    });
+  });
 }
 
 
