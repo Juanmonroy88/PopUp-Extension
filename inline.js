@@ -1953,8 +1953,10 @@ function createInlineAccountDropdown(accounts, input, fieldType) {
       : accounts;
 
     if (toShow.length === 0 && lower.length > 0) {
-      list.innerHTML = '';
-      list.appendChild(saveNewRow);
+      hideInlineAccountDropdown();
+      showModule(input, fieldType);
+      setModuleState('save');
+      moduleElement.dataset.cerbyFromLoginPage = '1';
       return;
     }
 
