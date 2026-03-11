@@ -1625,10 +1625,10 @@ input:focus-visible {
 /* Account Details Header */
 .account-details-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  height: 56px;
-  padding: 16px 16px 8px 10px;
+  min-height: 56px;
+  padding: 16px;
   box-sizing: border-box;
   flex-shrink: 0;
 }
@@ -1673,7 +1673,7 @@ input:focus-visible {
 }
 
 .account-details-edit-button {
-  border: 1px solid var(--background-default-secondary);
+  border: 1px solid var(--border-default-primary);
   box-sizing: border-box;
   display: flex;
   gap: var(--space-s);
@@ -1682,7 +1682,7 @@ input:focus-visible {
   height: 32px;
   padding: 0 12px;
   border-radius: var(--radius-xs);
-  background: transparent;
+  background: var(--background-default-main);
   cursor: pointer;
   flex-shrink: 0;
 }
@@ -1886,7 +1886,6 @@ input:focus-visible {
   gap: 8px;
   padding: 10px 16px;
   border-radius: var(--radius-xs);
-  border: none;
   font-family: var(--font-family-proxima-nova);
   font-size: 14px;
   font-weight: 500;
@@ -1905,17 +1904,19 @@ input:focus-visible {
 }
 
 .account-details-popout-button {
-  background: var(--background-default-secondary);
+  background: var(--background-default-main);
   color: var(--text-default-primary);
+  border: 1px solid var(--border-default-primary);
 }
 
 .account-details-popout-button:hover {
-  background: var(--background-default-tertiary);
+  background: var(--background-default-secondary);
 }
 
 .account-details-autologin-button {
   background: var(--primitive-teal-500);
   color: var(--text-default-contrast);
+  border: 1px solid transparent;
 }
 
 .account-details-autologin-button:hover {
