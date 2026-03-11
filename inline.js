@@ -22,6 +22,9 @@ const MODULE_PASSWORD_TEXT_ID = 'cerby-inline-module-password';
 const MODULE_OFFSET = 8;
 const SAVE_ACCOUNT_MODAL_ID = 'cerby-save-account-modal';
 const INLINE_ACCOUNT_DROPDOWN_ID = 'cerby-inline-account-dropdown';
+const INLINE_FIELD_INDICATOR_ID = 'cerby-inline-field-indicator';
+const INLINE_FIELD_INDICATOR_WIDTH = 64;
+const INLINE_FIELD_INDICATOR_INPUT_PADDING = 64;
 
 /** Top-level document so the modal is centered on the full browser viewport with overlay. */
 function getTopDocument() {
@@ -44,6 +47,8 @@ let detachInputListener = null;
 let moduleSaveButton = null;
 let saveAccountModal = null;
 let inlineAccountDropdown = null;
+let inlineFieldIndicator = null;
+let inlineFieldIndicatorOriginalPaddingRight = null;
 
 initializeInlineExtension();
 
@@ -64,7 +69,11 @@ async function initializeInlineExtension() {
   document.addEventListener('keydown', handleKeydownDismiss, true);
   // Delegate Save in Cerby click so modal opens even if button listener doesn't fire (e.g. focus/stack)
   document.addEventListener('click', handleSaveInCerbyClick, true);
-  window.addEventListener('blur', hideModule, true);
+  window.addEventListener('blur', () => {
+    hideModule();
+    hideInlineAccountDropdown();
+    hideInlineFieldIndicator();
+  }, true);
   window.addEventListener('scroll', handleViewportChange, true);
   window.addEventListener('resize', handleViewportChange, true);
   window.addEventListener('orientationchange', handleViewportChange, true);
@@ -126,30 +135,30 @@ function handleFocusIn(event) {
   if (!(target instanceof HTMLInputElement)) {
     if (moduleElement && !moduleContainsTarget(target)) hideModule();
     if (inlineAccountDropdown && !inlineAccountDropdown.contains(target)) hideInlineAccountDropdown();
+    if (inlineFieldIndicator && !inlineFieldIndicator.contains(target)) hideInlineFieldIndicator();
     return;
   }
 
   const isEmailField = isEligibleInput(target);
   const isPasswordField = isEligiblePasswordInput(target);
-  const isLoginContext = isLoginPage();
 
   if (!isEmailField && !isPasswordField) {
     if (moduleElement && !moduleContainsTarget(target)) hideModule();
     if (inlineAccountDropdown && !inlineAccountDropdown.contains(target)) hideInlineAccountDropdown();
+    if (inlineFieldIndicator && !inlineFieldIndicator.contains(target)) hideInlineFieldIndicator();
     return;
   }
 
   currentInput = target;
 
-  if (isLoginContext) {
-    hideModule();
-    tryShowInlineAccountDropdown(target, isPasswordField ? 'password' : 'email');
-  } else if (isSignupContext()) {
+  if (isSignupContext()) {
     hideInlineAccountDropdown();
+    hideInlineFieldIndicator();
     showModule(target, isPasswordField ? 'password' : 'email');
   } else {
     hideModule();
     hideInlineAccountDropdown();
+    tryShowInlineFieldIndicator(target, isPasswordField ? 'password' : 'email');
   }
 }
 
@@ -157,24 +166,42 @@ function moduleContainsTarget(target) {
   return moduleElement && moduleElement.contains(target);
 }
 
+function isInsideSameForm(element, formElement) {
+  if (!element || !formElement) return false;
+  return formElement.contains(element);
+}
+
 function handleDismiss(event) {
   const target = event.target;
   const inModule = moduleElement && (moduleContainsTarget(target) || target === currentInput);
   const inDropdown = inlineAccountDropdown && (inlineAccountDropdown.contains(target) || target === currentInput);
-  if (inModule || inDropdown) return;
+  const inIndicator = inlineFieldIndicator && (inlineFieldIndicator.contains(target) || target === currentInput);
+  if (inModule || inDropdown || inIndicator) return;
+
+  const inputForm = currentInput?.form;
+  const clickInForm = inputForm && isInsideSameForm(target, inputForm);
+
+  if (inlineFieldIndicator && clickInForm) {
+    hideModule();
+    hideInlineAccountDropdown();
+    return;
+  }
+
   hideModule();
   hideInlineAccountDropdown();
+  hideInlineFieldIndicator();
 }
 
 function handleKeydownDismiss(event) {
   if (event.key === 'Escape') {
     hideModule();
     hideInlineAccountDropdown();
+    hideInlineFieldIndicator();
     return;
   }
 
-  if (event.key === 'Tab' && (moduleElement || inlineAccountDropdown)) {
-    const root = inlineAccountDropdown || moduleElement;
+  if (event.key === 'Tab' && (moduleElement || inlineAccountDropdown || inlineFieldIndicator)) {
+    const root = inlineAccountDropdown || moduleElement || inlineFieldIndicator;
     const focusableElements = getFocusableElements(root);
     if (!focusableElements.length) {
       return;
@@ -1483,13 +1510,15 @@ function handleSaveClick(event) {
 function handleViewportChange() {
   const moduleVisible = moduleElement && currentInput && moduleElement.classList.contains('cerby-inline-module--visible');
   const dropdownVisible = inlineAccountDropdown && currentInput && inlineAccountDropdown.classList.contains('cerby-inline-account-dropdown--visible');
-  if (!moduleVisible && !dropdownVisible) return;
+  const indicatorVisible = inlineFieldIndicator && inlineFieldIndicator.classList.contains('cerby-inline-field-indicator--visible');
+  if (!moduleVisible && !dropdownVisible && !indicatorVisible) return;
   if (pendingViewportUpdate) return;
   pendingViewportUpdate = true;
   requestAnimationFrame(() => {
     pendingViewportUpdate = false;
     updateModulePosition();
     if (dropdownVisible) updateInlineAccountDropdownPosition();
+    if (indicatorVisible) updateInlineFieldIndicatorPosition();
   });
 }
 
@@ -1542,6 +1571,170 @@ function getDomainFromService(serviceName) {
   return (serviceName.toLowerCase().replace(/\s+/g, '') || 'unknown') + '.com';
 }
 
+async function tryShowInlineFieldIndicator(input, fieldType) {
+  if (!document.body || !chromeApi?.storage?.local) return;
+  if (expandedAccountsModal) return;
+  const currentDomain = extractDomain(window.location.href);
+  if (!currentDomain) return;
+
+  const result = await chromeApi.storage.local.get(['accounts']);
+  const accounts = Array.isArray(result?.accounts) ? result.accounts : [];
+  const matching = accounts.filter(acc => {
+    const providerDomain = inlineProviderDomainMap[acc.service];
+    return providerDomain && currentDomain === providerDomain;
+  });
+  if (matching.length === 0) return;
+
+  hideInlineFieldIndicator();
+  const indicator = createInlineFieldIndicator(input, fieldType, matching);
+  if (!indicator) return;
+
+  document.body.appendChild(indicator);
+  inlineFieldIndicator = indicator;
+  indicator._cerbyInput = input;
+  indicator._cerbyAccounts = matching;
+  indicator._cerbyFieldType = fieldType;
+  currentInput = input;
+
+  inlineFieldIndicatorOriginalPaddingRight = input.style.paddingRight || '';
+  input.style.paddingRight = `${INLINE_FIELD_INDICATOR_INPUT_PADDING}px`;
+
+  requestAnimationFrame(() => {
+    updateInlineFieldIndicatorPosition();
+    indicator.classList.add('cerby-inline-field-indicator--visible');
+  });
+
+  const INDICATOR_ANIMATION_MS = 380;
+  const dropdownShowTimer = setTimeout(() => {
+    if (inlineFieldIndicator === indicator && currentInput === input) {
+      tryShowInlineAccountDropdown(input, fieldType);
+    }
+  }, INDICATOR_ANIMATION_MS);
+  indicator._cerbyDropdownShowTimer = dropdownShowTimer;
+}
+
+function hideInlineFieldIndicator() {
+  if (inlineFieldIndicator) {
+    if (inlineFieldIndicator._cerbyDropdownShowTimer) {
+      clearTimeout(inlineFieldIndicator._cerbyDropdownShowTimer);
+    }
+    const input = inlineFieldIndicator._cerbyInput;
+    if (input && input.style) {
+      input.style.paddingRight = inlineFieldIndicatorOriginalPaddingRight !== null ? inlineFieldIndicatorOriginalPaddingRight : '';
+    }
+    inlineFieldIndicatorOriginalPaddingRight = null;
+    inlineFieldIndicator.remove();
+    inlineFieldIndicator = null;
+  }
+}
+
+function createInlineFieldIndicator(input, fieldType, accounts) {
+  const getUrl = (path) => (chromeApi?.runtime?.getURL ? chromeApi.runtime.getURL(path) : path);
+  const chevronDownUrl = getUrl('assets/chevron-down-icon.svg');
+  const cerbyLogoUrl = getUrl('assets/cerby-logo-modal.svg');
+
+  function escapeHtml(s) {
+    if (s == null) return '';
+    const div = document.createElement('div');
+    div.textContent = s;
+    return div.innerHTML;
+  }
+
+  const container = document.createElement('div');
+  container.id = INLINE_FIELD_INDICATOR_ID;
+  container.className = 'cerby-inline-field-indicator';
+  container.setAttribute('role', 'group');
+  container.setAttribute('aria-label', 'Cerby password manager');
+
+  container.innerHTML = `
+    <button type="button" class="cerby-inline-field-indicator__btn cerby-inline-field-indicator__expand" aria-label="Show accounts">
+      <img src="${escapeHtml(chevronDownUrl)}" alt="" class="cerby-inline-field-indicator__icon cerby-inline-field-indicator__chevron">
+    </button>
+    <button type="button" class="cerby-inline-field-indicator__btn cerby-inline-field-indicator__cerby" aria-label="Open Cerby">
+      <img src="${escapeHtml(cerbyLogoUrl)}" alt="Cerby" class="cerby-inline-field-indicator__icon cerby-inline-field-indicator__logo">
+    </button>`;
+
+  const expandBtn = container.querySelector('.cerby-inline-field-indicator__expand');
+  const cerbyBtn = container.querySelector('.cerby-inline-field-indicator__cerby');
+
+  expandBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (inlineAccountDropdown && inlineAccountDropdown.classList.contains('cerby-inline-account-dropdown--visible')) {
+      hideInlineAccountDropdown();
+    } else {
+      tryShowInlineAccountDropdown(input, fieldType);
+    }
+  });
+
+  cerbyBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    hideInlineAccountDropdown();
+    hideInlineFieldIndicator();
+    if (chromeApi?.runtime?.sendMessage) {
+      chromeApi.runtime.sendMessage({ type: 'cerby-inline-open-panel' });
+    }
+  });
+
+  container._cerbyAccounts = accounts;
+  container._cerbyFieldType = fieldType;
+  return container;
+}
+
+function findEquivalentInputInForm(oldInput) {
+  if (!oldInput || !document.body) return null;
+  const form = oldInput.form || oldInput.closest?.('form');
+  if (!form) return null;
+  const type = (oldInput.getAttribute('type') || 'text').toLowerCase();
+  const name = oldInput.getAttribute('name') || '';
+  const id = oldInput.getAttribute('id') || '';
+  const inputs = form.querySelectorAll('input');
+  for (const inp of inputs) {
+    if (inp === oldInput && document.contains(inp)) return oldInput;
+    const t = (inp.getAttribute('type') || 'text').toLowerCase();
+    const n = inp.getAttribute('name') || '';
+    const i = inp.getAttribute('id') || '';
+    if (t !== type) continue;
+    if (name && name === n) return inp;
+    if (id && id === i) return inp;
+  }
+  return null;
+}
+
+function updateInlineFieldIndicatorPosition() {
+  if (!inlineFieldIndicator) return;
+  let input = currentInput || inlineFieldIndicator._cerbyInput;
+  if (!input) return;
+
+  if (!document.contains(input)) {
+    const replacement = findEquivalentInputInForm(input);
+    if (replacement) {
+      input = replacement;
+      inlineFieldIndicator._cerbyInput = input;
+      currentInput = input;
+    } else {
+      return;
+    }
+  }
+
+  const rect = input.getBoundingClientRect();
+  if (!rect || (rect.width === 0 && rect.height === 0)) {
+    return;
+  }
+
+  const scrollX = window.scrollX || window.pageXOffset;
+  const scrollY = window.scrollY || window.pageYOffset;
+  const padding = 8;
+  const indicatorHeight = 36;
+
+  const left = rect.left + scrollX + rect.width - INLINE_FIELD_INDICATOR_WIDTH - padding;
+  const top = rect.top + scrollY + (rect.height - indicatorHeight) / 2;
+
+  inlineFieldIndicator.style.left = `${left}px`;
+  inlineFieldIndicator.style.top = `${top}px`;
+}
+
 async function tryShowInlineAccountDropdown(input, fieldType) {
   if (!document.body || !chromeApi?.storage?.local) return;
   /* Do not show the inline menu over the provider accounts modal (it's not a login form context) */
@@ -1570,17 +1763,36 @@ async function tryShowInlineAccountDropdown(input, fieldType) {
   requestAnimationFrame(() => {
     updateInlineAccountDropdownPosition();
     dropdown.classList.add('cerby-inline-account-dropdown--visible');
+    inlineFieldIndicator?.classList.add('cerby-inline-field-indicator--dropdown-open');
   });
 }
 
 function hideInlineAccountDropdown() {
-  if (inlineAccountDropdown) {
-    const input = inlineAccountDropdown._cerbyInput;
-    if (input && inlineAccountDropdown._cerbyInputFilterHandler) {
-      input.removeEventListener('input', inlineAccountDropdown._cerbyInputFilterHandler);
+  if (!inlineAccountDropdown) return;
+  const dropdown = inlineAccountDropdown;
+  const input = dropdown._cerbyInput;
+  inlineFieldIndicator?.classList.remove('cerby-inline-field-indicator--dropdown-open');
+
+  const finishHide = () => {
+    if (input && dropdown._cerbyInputFilterHandler) {
+      input.removeEventListener('input', dropdown._cerbyInputFilterHandler);
     }
-    inlineAccountDropdown.remove();
-    inlineAccountDropdown = null;
+    dropdown.remove();
+    if (inlineAccountDropdown === dropdown) {
+      inlineAccountDropdown = null;
+    }
+  };
+
+  if (dropdown.classList.contains('cerby-inline-account-dropdown--visible')) {
+    dropdown.classList.add('cerby-inline-account-dropdown--hiding');
+    dropdown.addEventListener('transitionend', function onEnd(e) {
+      if (e.target === dropdown && e.propertyName === 'opacity') {
+        dropdown.removeEventListener('transitionend', onEnd);
+        finishHide();
+      }
+    }, { once: true });
+  } else {
+    finishHide();
   }
 }
 

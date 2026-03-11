@@ -2028,8 +2028,11 @@ input:focus-visible {
 }
 
 .password-field-left:focus-visible {
-  outline: none;
+  outline: 2px solid var(--button-primary-borderless-enabled);
+  outline-offset: 2px;
   background: var(--background-default-secondary);
+  position: relative;
+  z-index: 1;
 }
 
 .account-details-field-password:hover,
@@ -2037,8 +2040,9 @@ input:focus-visible {
   border-color: #ced5de;
 }
 
-.account-details-field-password.keyboard-focus-ring {
-  box-shadow: 0 0 0 2px var(--button-primary-borderless-enabled);
+/* Allow focus ring to show outside (avoid clipped outline) */
+.account-details-field-password:focus-within {
+  overflow: visible;
 }
 
 /* When password field is hovered, show hover state on left section by default */
@@ -2107,7 +2111,9 @@ input:focus-visible {
 }
 
 .password-field-right:focus-visible {
-  outline: none;
+  outline: 2px solid var(--button-primary-borderless-enabled);
+  outline-offset: 2px;
+  background: var(--background-default-secondary);
 }
 
 .account-details-field-password:hover .password-field-right,
@@ -2116,8 +2122,7 @@ input:focus-visible {
   width: auto;
 }
 
-.password-field-right:hover,
-.password-field-right:focus-visible {
+.password-field-right:hover {
   background: var(--background-default-secondary);
 }
 
@@ -2181,8 +2186,11 @@ input:focus-visible {
 }
 
 .url-field-left:focus-visible {
-  outline: none;
+  outline: 2px solid var(--button-primary-borderless-enabled);
+  outline-offset: 2px;
   background: var(--background-default-secondary);
+  position: relative;
+  z-index: 1;
 }
 
 .account-details-field-url:hover,
@@ -2190,8 +2198,9 @@ input:focus-visible {
   border-color: #ced5de;
 }
 
-.account-details-field-url.keyboard-focus-ring {
-  box-shadow: 0 0 0 2px var(--button-primary-borderless-enabled);
+/* Allow focus ring to show outside (avoid clipped outline) */
+.account-details-field-url:focus-within {
+  overflow: visible;
 }
 
 .account-details-field-url:hover .url-field-left,
@@ -2258,7 +2267,9 @@ input:focus-visible {
 }
 
 .url-field-right:focus-visible {
-  outline: none;
+  outline: 2px solid var(--button-primary-borderless-enabled);
+  outline-offset: 2px;
+  background: var(--background-default-secondary);
 }
 
 .account-details-field-url:hover .url-field-right,
@@ -2267,8 +2278,7 @@ input:focus-visible {
   width: auto;
 }
 
-.url-field-right:hover,
-.url-field-right:focus-visible {
+.url-field-right:hover {
   background: var(--background-default-secondary);
 }
 

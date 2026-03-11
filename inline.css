@@ -207,6 +207,129 @@
   outline-offset: 2px;
 }
 
+/* Inline Field Indicator - inside login field on right (Figma: node 10388-7326) */
+.cerby-inline-field-indicator {
+  display: none;
+  position: absolute;
+  flex-direction: row;
+  align-items: center;
+  gap: 0;
+  padding: 4px;
+  background: #ffffff;
+  border-radius: 999px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  z-index: 2147483646;
+  pointer-events: auto;
+  overflow: hidden;
+  max-width: 36px;
+  opacity: 0;
+}
+
+.cerby-inline-field-indicator--visible {
+  display: flex;
+  animation: cerby-indicator-enter 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+.cerby-inline-field-indicator--visible .cerby-inline-field-indicator__chevron {
+  animation: cerby-chevron-appear 0.25s ease 0.18s both;
+}
+
+@keyframes cerby-indicator-enter {
+  0% {
+    max-width: 36px;
+    opacity: 0;
+  }
+  50% {
+    max-width: 64px;
+    opacity: 1;
+  }
+  100% {
+    max-width: 64px;
+    opacity: 1;
+  }
+}
+
+@keyframes cerby-chevron-appear {
+  0% {
+    opacity: 0;
+    transform: rotate(180deg) scale(0.6);
+  }
+  100% {
+    opacity: 1;
+    transform: rotate(180deg) scale(1);
+  }
+}
+
+.cerby-inline-field-indicator__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
+  outline: none;
+}
+
+/* Left button (expand) - active state: light blue-grey with subtle depth */
+.cerby-inline-field-indicator__expand {
+  background: #e8ecf0;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.5), 0 1px 1px rgba(0, 0, 0, 0.06);
+}
+
+.cerby-inline-field-indicator__expand:hover,
+.cerby-inline-field-indicator__expand:focus-visible {
+  background: #d2d8e2;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.4), 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.cerby-inline-field-indicator__expand:active {
+  background: #c0c7d4;
+}
+
+/* Right button (Cerby) - inactive state: white, flat */
+.cerby-inline-field-indicator__cerby {
+  background: #ffffff;
+}
+
+.cerby-inline-field-indicator__cerby:hover,
+.cerby-inline-field-indicator__cerby:focus-visible {
+  background: #e8ecf0;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.5);
+}
+
+.cerby-inline-field-indicator__cerby:active {
+  background: #d2d8e2;
+}
+
+.cerby-inline-field-indicator__icon {
+  display: block;
+  object-fit: contain;
+  pointer-events: none;
+  filter: none;
+}
+
+/* Chevron: rotates based on dropdown state - up when closed, down when open */
+.cerby-inline-field-indicator__chevron {
+  width: 12px;
+  height: 12px;
+  transform: rotate(180deg);
+  transition: transform 0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.cerby-inline-field-indicator--dropdown-open .cerby-inline-field-indicator__chevron {
+  transform: rotate(0deg);
+}
+
+/* Cerby logo: dark blue-grey */
+.cerby-inline-field-indicator__logo {
+  width: 16px;
+  height: 14px;
+}
+
 /* Inline Account Dropdown - login pages (Figma: node 10311-4826) */
 .cerby-inline-account-dropdown {
   display: none;
@@ -225,10 +348,21 @@
   z-index: 2147483646;
   font-family: "Proxima Nova", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   pointer-events: auto;
+  opacity: 0;
+  transform: translateY(-6px) scale(0.98);
+  transition: opacity 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .cerby-inline-account-dropdown--visible {
   display: flex;
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.cerby-inline-account-dropdown--hiding {
+  opacity: 0;
+  transform: translateY(-6px) scale(0.98);
+  pointer-events: none;
 }
 
 .cerby-inline-account-dropdown__header {

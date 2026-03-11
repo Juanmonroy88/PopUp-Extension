@@ -1703,14 +1703,8 @@ function initializeAccountCardListeners() {
       if (e.target.closest('.account-action-button') || e.target.closest('.dropdown-menu')) {
         return;
       }
-      const accountServiceEl = newCard.querySelector('.account-service');
-      const accountService = accountServiceEl?.dataset.originalText || accountServiceEl?.textContent.trim() || '';
-      // Secret cards open account details; account cards trigger auto-login
-      if (accountService === 'Secret') {
-        showAccountDetails(newCard);
-      } else {
-        triggerAutoLogin(newCard);
-      }
+      // Clicking the card (except buttons) opens account details
+      showAccountDetails(newCard);
     });
   });
 }
@@ -1828,13 +1822,7 @@ function handleAccountCardKeyDown(event) {
     case 'Enter':
     case ' ':
       event.preventDefault();
-      const accountServiceEl = card.querySelector('.account-service');
-      const accountService = accountServiceEl?.dataset.originalText || accountServiceEl?.textContent.trim() || '';
-      if (accountService === 'Secret') {
-        showAccountDetails(card);
-      } else {
-        triggerAutoLogin(card);
-      }
+      showAccountDetails(card);
       break;
     default:
       break;
@@ -2654,28 +2642,11 @@ function initializeAccountDetailsModal() {
   let passwordRevealed = false;
   let actualPassword = ''; // Store actual password when revealed
   
-  // Handle hover states for password field sections
+  // Handle hover states for password field sections (keyboard focus is per-section via CSS :focus-visible)
   if (passwordField) {
     const passwordFieldLeft = passwordField.querySelector('.password-field-left');
     const passwordFieldRight = passwordField.querySelector('.password-field-right');
-    
-    if (!passwordField.dataset.keyboardFocusInit) {
-      const handleFocusIn = () => {
-        if (lastInteractionWasKeyboard) {
-          passwordField.classList.add('keyboard-focus-ring');
-        }
-      };
-      const handleFocusOut = (e) => {
-        if (!passwordField.contains(e.relatedTarget)) {
-          passwordField.classList.remove('keyboard-focus-ring');
-        }
-      };
 
-      passwordField.addEventListener('focusin', handleFocusIn);
-      passwordField.addEventListener('focusout', handleFocusOut);
-      passwordField.dataset.keyboardFocusInit = 'true';
-    }
-    
     if (passwordFieldRight && !passwordFieldRight.dataset.keyboardInteractionInit) {
       const addRightHoverState = () => {
         if (passwordFieldLeft) {
@@ -2690,12 +2661,7 @@ function initializeAccountDetailsModal() {
 
       passwordFieldRight.addEventListener('mouseenter', addRightHoverState);
       passwordFieldRight.addEventListener('mouseleave', removeRightHoverState);
-      passwordFieldRight.addEventListener('focus', () => {
-        addRightHoverState();
-        if (lastInteractionWasKeyboard) {
-          passwordField.classList.add('keyboard-focus-ring');
-        }
-      });
+      passwordFieldRight.addEventListener('focus', addRightHoverState);
       passwordFieldRight.addEventListener('blur', removeRightHoverState);
       passwordFieldRight.dataset.keyboardInteractionInit = 'true';
     }
@@ -2752,27 +2718,10 @@ function initializeAccountDetailsModal() {
   const urlCopyButton = document.getElementById('urlCopyButton');
   const urlOpenButton = document.getElementById('urlOpenButton');
   
-  // Handle hover states for URL field sections
+  // Handle hover states for URL field sections (keyboard focus is per-section via CSS :focus-visible)
   if (urlField) {
     const urlFieldLeft = urlField.querySelector('.url-field-left');
     const urlFieldRight = urlField.querySelector('.url-field-right');
-    
-    if (!urlField.dataset.keyboardFocusInit) {
-      const handleFocusIn = () => {
-        if (lastInteractionWasKeyboard) {
-          urlField.classList.add('keyboard-focus-ring');
-        }
-      };
-      const handleFocusOut = (e) => {
-        if (!urlField.contains(e.relatedTarget)) {
-          urlField.classList.remove('keyboard-focus-ring');
-        }
-      };
-
-      urlField.addEventListener('focusin', handleFocusIn);
-      urlField.addEventListener('focusout', handleFocusOut);
-      urlField.dataset.keyboardFocusInit = 'true';
-    }
 
     if (urlFieldRight && !urlFieldRight.dataset.keyboardInteractionInit) {
       const addRightHoverState = () => {
@@ -2788,12 +2737,7 @@ function initializeAccountDetailsModal() {
 
       urlFieldRight.addEventListener('mouseenter', addRightHoverState);
       urlFieldRight.addEventListener('mouseleave', removeRightHoverState);
-      urlFieldRight.addEventListener('focus', () => {
-        addRightHoverState();
-        if (lastInteractionWasKeyboard) {
-          urlField.classList.add('keyboard-focus-ring');
-        }
-      });
+      urlFieldRight.addEventListener('focus', addRightHoverState);
       urlFieldRight.addEventListener('blur', removeRightHoverState);
       urlFieldRight.dataset.keyboardInteractionInit = 'true';
     }
@@ -2882,9 +2826,36 @@ function triggerAutoLogin(card) {
   proceedWithLogin(accountService, hasBadCredentials);
 }
 
-// Initialize login button functionality (no-op since login buttons were removed; card click handles auto-login)
+// Initialize login button functionality
 function initializeLoginButtons() {
-  // Login buttons removed - auto-login is triggered by clicking the whole card
+  const loginButtons = document.querySelectorAll('.login-button');
+
+  loginButtons.forEach(button => {
+    syncBadCredentialsAutoLoginTooltip(button);
+
+    button.addEventListener('click', async function(e) {
+      e.stopPropagation();
+
+      const card = button.closest('.account-card');
+      if (!card) return;
+
+      const accountServiceEl = card.querySelector('.account-service');
+      const accountService = accountServiceEl?.dataset.originalText || accountServiceEl?.textContent.trim() || '';
+
+      // Skip if it's a secret card (secrets don't have login buttons, but guard just in case)
+      if (accountService === 'Secret') return;
+
+      const hasBadCredentials = card.querySelector('.account-logo-alert-icon') !== null ||
+        card.querySelector('.bad-credentials-badge') !== null;
+
+      if (hasBadCredentials) {
+        proceedWithLogin(accountService, true);
+        return;
+      }
+
+      proceedWithLogin(accountService, false);
+    });
+  });
 }
 
 
