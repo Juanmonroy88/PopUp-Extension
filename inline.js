@@ -1944,6 +1944,11 @@ function createInlineAccountDropdown(accounts, input, fieldType) {
 
   function filterAndRender(term) {
     const lower = (term || '').toLowerCase().trim();
+    if (lower.length > 0) {
+      dropdown.classList.add('cerby-inline-account-dropdown--header-hidden');
+    } else {
+      dropdown.classList.remove('cerby-inline-account-dropdown--header-hidden');
+    }
     const toShow = lower
       ? accounts.filter(acc =>
           (acc.name || '').toLowerCase().includes(lower) ||
