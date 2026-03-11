@@ -1854,10 +1854,13 @@ function createInlineAccountDropdown(accounts, input, fieldType) {
   const list = document.createElement('div');
   list.className = 'cerby-inline-account-dropdown__list';
 
-  function appendAccountItem(acc) {
+  function appendAccountItem(acc, searchTerm) {
     const isMake = acc.service === 'Make';
     const favicon = isMake ? makeLogoUrl : (acc.logoUrl || `https://icons.duckduckgo.com/ip3/${getDomainFromService(acc.service) || ''}.ico`);
     const placeholderClass = isMake ? 'cerby-inline-account-dropdown__logo cerby-inline-account-dropdown__logo--make' : 'cerby-inline-account-dropdown__logo';
+
+    const nameDisplay = getHighlightedHtml(acc.name || '', searchTerm, escapeHtml);
+    const emailDisplay = getHighlightedHtml(acc.email || acc.name || '', searchTerm, escapeHtml);
 
     const item = document.createElement('div');
     item.className = 'cerby-inline-account-dropdown__item';
@@ -1872,8 +1875,8 @@ function createInlineAccountDropdown(accounts, input, fieldType) {
           <span class="cerby-inline-account-dropdown__logo-fallback" style="display:none;">${(acc.service || '?').charAt(0)}</span>
         </div>
         <div class="cerby-inline-account-dropdown__item-info">
-          <span class="cerby-inline-account-dropdown__item-name">${escapeHtml(acc.name || '')}</span>
-          <span class="cerby-inline-account-dropdown__item-email">${escapeHtml(acc.email || acc.name || '')}</span>
+          <span class="cerby-inline-account-dropdown__item-name">${nameDisplay}</span>
+          <span class="cerby-inline-account-dropdown__item-email">${emailDisplay}</span>
         </div>
       </div>
       <button type="button" class="cerby-inline-account-dropdown__item-info-btn" aria-label="Account details">
@@ -1910,10 +1913,16 @@ function createInlineAccountDropdown(accounts, input, fieldType) {
 
   function filterAndRender(term) {
     const lower = (term || '').toLowerCase().trim();
+    if (lower.length > 0) {
+      dropdown.classList.add('cerby-inline-account-dropdown--header-hidden');
+    } else {
+      dropdown.classList.remove('cerby-inline-account-dropdown--header-hidden');
+    }
     const toShow = lower
       ? accounts.filter(acc =>
           (acc.name || '').toLowerCase().includes(lower) ||
           (acc.email || '').toLowerCase().includes(lower) ||
+          (acc.username || '').toLowerCase().includes(lower) ||
           (acc.service || '').toLowerCase().includes(lower))
       : accounts;
 
@@ -1926,7 +1935,7 @@ function createInlineAccountDropdown(accounts, input, fieldType) {
     }
 
     list.innerHTML = '';
-    toShow.forEach(appendAccountItem);
+    toShow.forEach((acc) => appendAccountItem(acc, lower));
   }
 
   filterAndRender(input?.value?.trim() || '');

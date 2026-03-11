@@ -13,8 +13,12 @@
   --text-default-contrast: #f8f8f8;
   --text-default-main: #0a111d;
   --button-primary-borderless-enabled: #2698bf;
+  --button-primary-solid-enabled: #007da8;
+  --button-primary-solid-hover: #006a8f;
   --primitive-purple-700: #482966;
   --primitive-purple-500: #bd5df0;
+  --primitive-teal-500: #14b8a6;
+  --primitive-teal-600: #0d9488;
   --radius-xs: 4px;
   --radius-s: 8px;
   --radius-2xl: 32px;
@@ -1623,10 +1627,10 @@ input:focus-visible {
 /* Account Details Header */
 .account-details-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  height: 56px;
-  padding: 16px 16px 8px 10px;
+  min-height: 56px;
+  padding: 16px;
   box-sizing: border-box;
   flex-shrink: 0;
 }
@@ -1671,7 +1675,7 @@ input:focus-visible {
 }
 
 .account-details-edit-button {
-  border: 1px solid var(--background-default-secondary);
+  border: 1px solid var(--border-default-primary);
   box-sizing: border-box;
   display: flex;
   gap: var(--space-s);
@@ -1680,7 +1684,7 @@ input:focus-visible {
   height: 32px;
   padding: 0 12px;
   border-radius: var(--radius-xs);
-  background: transparent;
+  background: var(--background-default-main);
   cursor: pointer;
   flex-shrink: 0;
 }
@@ -1721,31 +1725,33 @@ input:focus-visible {
 /* Account Details Title */
 .account-details-title {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 20px;
   width: 100%;
 }
 
 .account-details-title-inner {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  flex: 1;
-  min-width: 0;
+  gap: 8px;
+  width: 100%;
 }
 
 .account-details-title-left {
   display: flex;
-  gap: var(--space-m);
+  flex-direction: column;
   align-items: center;
-  flex: 1;
+  gap: 8px;
+  width: 100%;
   min-width: 0;
 }
 
 .account-details-logo-container {
   position: relative;
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   flex-shrink: 0;
 }
 
@@ -1781,8 +1787,9 @@ input:focus-visible {
 .account-details-title-text {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  flex: 1;
+  align-items: center;
+  text-align: center;
+  width: 100%;
   min-width: 0;
 }
 
@@ -1844,88 +1851,93 @@ input:focus-visible {
 }
 
 
-.account-details-provider {
-  font-family: var(--font-family-proxima-nova);
-  font-weight: 400;
-  font-size: 14px;
-  line-height: 15px;
-  color: var(--text-default-secondary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 .account-details-name {
   font-family: var(--font-family-proxima-nova);
   font-weight: 600;
-  font-size: 16px;
-  line-height: 20px;
+  font-size: 18px;
+  line-height: 22px;
   color: var(--text-default-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  margin: 0 0 2px 0;
 }
 
-.account-details-open-button {
+.account-details-provider {
+  font-family: var(--font-family-proxima-nova);
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 18px;
+  color: var(--text-default-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0;
+}
+
+/* Account details action buttons */
+.account-details-action-buttons {
+  display: flex;
+  gap: 12px;
+  flex-wrap: nowrap;
+  width: 100%;
+}
+
+.account-details-popout-button,
+.account-details-autologin-button {
   box-sizing: border-box;
   display: flex;
-  gap: var(--space-s);
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  padding: 0;
+  gap: 8px;
+  padding: 10px 16px;
   border-radius: var(--radius-xs);
-  background: transparent;
-  border: none;
+  font-family: var(--font-family-proxima-nova);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 18px;
   cursor: pointer;
-  flex-shrink: 0;
-  position: relative;
+  min-width: 0;
+  white-space: nowrap;
 }
 
-.account-details-open-button:hover {
+.account-details-popout-button {
+  flex: 1;
+}
+
+.account-details-autologin-button {
+  flex: 0 0 auto;
+}
+
+.account-details-action-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  display: block;
+}
+
+.account-details-popout-button {
+  background: var(--background-default-main);
+  color: var(--text-default-primary);
+  border: 1px solid var(--border-default-primary);
+}
+
+.account-details-popout-button:hover {
   background: var(--background-default-secondary);
 }
 
-/* Tooltip for account details open button */
-.account-details-open-button[data-tooltip]::before {
-  content: attr(data-tooltip);
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--text-default-main);
+.account-details-autologin-button {
+  background: var(--button-primary-solid-enabled);
   color: var(--text-default-contrast);
-  padding: 6px 10px;
-  border-radius: var(--radius-xs);
-  font-family: var(--font-family-proxima-nova);
-  font-size: 12px;
-  font-weight: 400;
-  line-height: 14px;
-  white-space: nowrap;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s;
-  z-index: 1000;
+  border: 1px solid transparent;
 }
 
-.account-details-open-button[data-tooltip]::after {
-  content: '';
-  position: absolute;
-  top: calc(100% + 2px);
-  left: 50%;
-  transform: translateX(-50%);
-  border: 4px solid transparent;
-  border-bottom-color: var(--text-default-main);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s;
-  z-index: 1000;
+.account-details-autologin-button:hover {
+  background: var(--button-primary-solid-hover);
 }
 
-.account-details-open-button[data-tooltip]:hover::before,
-.account-details-open-button[data-tooltip]:hover::after {
-  opacity: 1;
+.account-details-autologin-button .account-details-action-icon {
+  filter: brightness(0) invert(1);
 }
 
 .open-new-icon-container {

@@ -1551,9 +1551,9 @@
   color: #7187ad;
 }
 
-/* Search highlight - matches extension blue/teal */
+/* Search highlight - Cerby primary CTA color */
 .cerby-search-highlight {
-  color: #2698bf;
+  color: #007da8;
   font-weight: 600;
   background: transparent;
 }
