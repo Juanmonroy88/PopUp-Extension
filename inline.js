@@ -1908,37 +1908,6 @@ function createInlineAccountDropdown(accounts, input, fieldType) {
     list.appendChild(item);
   }
 
-  // "Save new account" row (shown on login): open save account modal
-  const saveNewRow = document.createElement('button');
-  saveNewRow.type = 'button';
-  saveNewRow.className = 'cerby-inline-account-dropdown__item cerby-inline-account-dropdown__save-new';
-  saveNewRow.setAttribute('role', 'option');
-  saveNewRow.innerHTML = `
-    <div class="cerby-inline-account-dropdown__item-main">
-      <div class="cerby-inline-account-dropdown__logo cerby-inline-account-dropdown__logo--save-new">
-        <img src="${escapeHtml(getUrl('assets/cerby-logo-modal.svg'))}" alt="Cerby" class="cerby-inline-account-dropdown__app-logo">
-      </div>
-      <div class="cerby-inline-account-dropdown__item-info">
-        <span class="cerby-inline-account-dropdown__item-name">Save new account</span>
-        <span class="cerby-inline-account-dropdown__item-email">Save in Cerby</span>
-      </div>
-    </div>`;
-  saveNewRow.addEventListener('click', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    hideInlineAccountDropdown();
-    const passwordFromPage = document.querySelector('input[type="password"]')?.value || '';
-    openSaveAccountModal(passwordFromPage, e.target);
-  });
-  saveNewRow.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      hideInlineAccountDropdown();
-      const passwordFromPage = document.querySelector('input[type="password"]')?.value || '';
-      openSaveAccountModal(passwordFromPage, e.target);
-    }
-  });
-
   function filterAndRender(term) {
     const lower = (term || '').toLowerCase().trim();
     const toShow = lower
@@ -1958,7 +1927,6 @@ function createInlineAccountDropdown(accounts, input, fieldType) {
 
     list.innerHTML = '';
     toShow.forEach(appendAccountItem);
-    list.appendChild(saveNewRow);
   }
 
   filterAndRender(input?.value?.trim() || '');
