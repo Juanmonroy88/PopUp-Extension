@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="popup.css">
   <style>
     body { width: 420px; min-height: 100vh; margin: 0; padding: 0; background: var(--background-default-main); overflow: auto; display: flex; flex-direction: column; }
-    .account-details-expanded-root .account-details-open-button { display: none !important; }
+    .account-details-expanded-root .account-details-action-buttons { display: none !important; }
     .account-details-expanded-root .account-details-content { flex: 1; padding-top: 24px; }
     .account-details-window-footer {
       flex-shrink: 0;
@@ -39,11 +39,10 @@
               </div>
             </div>
             <div class="account-details-title-text">
-              <p class="account-details-provider" id="accountDetailsProvider">—</p>
               <p class="account-details-name" id="accountDetailsName">—</p>
+              <p class="account-details-provider" id="accountDetailsProvider">—</p>
             </div>
           </div>
-          <button class="account-details-open-button" aria-hidden="true" tabindex="-1"></button>
         </div>
       </div>
 

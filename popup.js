@@ -2171,14 +2171,17 @@ function showAccountDetails(accountCard) {
     }
   }
   
-  // Hide login button for secrets
-  const openButton = document.getElementById('accountDetailsOpenButton');
-  if (openButton) {
-    openButton.style.display = isSecret ? 'none' : 'flex';
-  }
-  
-  // Store URL for the open button
+  // Store account card for pop-out; URL for auto-login
+  modal._accountCard = accountCard;
   modal.dataset.accountUrl = loginUrl;
+
+  // Show/hide action buttons: Pop-out for all; Auto-login only for non-secrets
+  const actionButtons = document.getElementById('accountDetailsActionButtons');
+  const popoutButton = document.getElementById('accountDetailsPopoutButton');
+  const autologinButton = document.getElementById('accountDetailsAutologinButton');
+  if (actionButtons) actionButtons.style.display = 'flex';
+  if (popoutButton) popoutButton.style.display = 'flex';
+  if (autologinButton) autologinButton.style.display = isSecret ? 'none' : 'flex';
   
   // Get all field elements
   const secretNoteField = document.getElementById('accountDetailsSecretNoteField');
@@ -2549,7 +2552,8 @@ function initializeAccountDetailsModal() {
   const modal = document.getElementById('accountDetailsModal');
   const closeButton = document.getElementById('accountDetailsCloseButton');
   const editButton = document.getElementById('accountDetailsEditButton');
-  const openButton = document.getElementById('accountDetailsOpenButton');
+  const popoutButton = document.getElementById('accountDetailsPopoutButton');
+  const autologinButton = document.getElementById('accountDetailsAutologinButton');
   
   // Close button handler
   if (closeButton) {
@@ -2583,9 +2587,17 @@ function initializeAccountDetailsModal() {
     });
   }
   
-  // Open in new tab button handler
-  if (openButton) {
-    openButton.addEventListener('click', async function() {
+  // Pop-out account details button handler
+  if (popoutButton) {
+    popoutButton.addEventListener('click', function() {
+      const card = modal?._accountCard;
+      if (card) openExpandedAccountDetails(card);
+    });
+  }
+
+  // Auto-login button handler
+  if (autologinButton) {
+    autologinButton.addEventListener('click', async function() {
       const url = modal?.dataset.accountUrl;
       if (!url) return;
 
